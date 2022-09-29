@@ -1,6 +1,10 @@
 const db = require("db.connect");
 
-const getUserSettings = db.query(/*some quey to fetch user with settings */);
+// this is hypothetical file with all the APIs that reuse db connection instead of db connection being passed into functions ad-hoc as paremeter
 
-// in this file all the functions that use db connection could lnad
-module.exports = { getUserSettings };
+const getUser = db.query(/*some quey to fetch user with settings */);
+const setAdminRole = db.query();
+const notifyUser = () => {};
+const notifyAdmins = () => {};
+
+module.exports = { getUser, setAdminRole, notifyUser, notifyAdmins };

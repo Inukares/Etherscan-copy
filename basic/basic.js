@@ -12,29 +12,21 @@ connectToDatabase() //
     });
   });
 
-// upon connecting to the db the connection should be stored
-// each and every single call should be wrapped with error handling
-// perhaps could get settings in one call alongside the get user
-// calls could be written with async await so that it's more readable
-
-// notifications could be done in parralel as one does not depend on the other
-
 // I'm assuming that this file is a script ran internally. Had that not been the case, I'd need to verify that connected user to the db has admin role himself
 
+const { setAdminRole, getUser, notifyUser, notifyAdmins } = require("./api");
+
+const USER_ROLE_UPDATED = "USER_ROLE_UPDATED";
+const ADMIN_ROLE = "ADMIN";
+
 const setAdminRole = async (id) => {
-  let setRoleSuccessfully = false;
   try {
-    await setRole(id, "ADMIN");
-    setRoleSuccessfully = true;
+    await setRole(id, ADMIN_ROLE);
   } catch (error) {
-    console.log("Failed to set the role");
-    setRoleSuccessfully = false;
+    console.log("Failed to set the role ", error);
+    throw new Error(error);
   }
-
-  return setRoleSuccessfully;
 };
-
-const SUCCESS_UPDATE = "USER_ROLE_UPDATED";
 
 const createAdmin = async () => {
   let user;
@@ -45,13 +37,29 @@ const createAdmin = async () => {
     user = await getUser("email@email.com");
   } catch (error) {
     console.log(error);
+    throw new Error("Couldnt fetch user!");
   }
-  if (!user) throw new Error(`Couldn't fetch user`);
-  const setRoleSuccessfully = await setAdminRole(user.id);
-  if (setRoleSuccessfully) {
-    const promises = [notifyUser(user.id, SUCCESS_UPDATE)§];
-    await p;
-  }
+  if (!user)
+    throw new Error(
+      `User has to be truthy in order to set role, but is: ${user}`
+    );
+
+  await setAdminRole(user.id);
+
+  const promises = [
+    // assumption: notify sends notification to a device of some kind and throws if it fails
+    // notify could also have more flexible signature. possible inspiration: https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/javascriptv3/example_code/sns/src/sns_publishsms.js#L31
+    notifyUser(user.id, USER_ROLE_UPDATED, notifyAdmins(USER_ROLE_UPDATED)),
+  ];
+
+  const results = await Promise.allSettled(promises);
+
+  results.forEach(({ status, value, reason }) => {
+    if (status === "rejected") {
+      console.log(reason);
+      throw new Error("Failed to send notification: ", value);
+    }
+  });
 };
 
 createAdmin();
