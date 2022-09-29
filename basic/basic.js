@@ -1,16 +1,15 @@
 // initial
-connectToDatabase() //
-  .then((database) => {
-    return getUser(database, "email@email.com").then((user) => {
-      return getUserSettings(database, user.id).then((settings) => {
-        return setRole(database, user.id, "ADMIN").then((success) => {
-          return notifyUser(user.id, "USER_ROLE_UPDATED").then((success) => {
-            return notifyAdmins("USER_ROLE_UPDATED");
-          });
+connectToDatabase().then((database) => {
+  return getUser(database, "email@email.com").then((user) => {
+    return getUserSettings(database, user.id).then((settings) => {
+      return setRole(database, user.id, "ADMIN").then((success) => {
+        return notifyUser(user.id, "USER_ROLE_UPDATED").then((success) => {
+          return notifyAdmins("USER_ROLE_UPDATED");
         });
       });
     });
   });
+});
 
 // I'm assuming that this file is a script ran internally. Had that not been the case, I'd need to verify that connected user to the db has admin role himself
 
@@ -28,7 +27,7 @@ const setAdminRole = async (id) => {
   }
 };
 
-const createAdmin = async () => {
+const getUser = async () => {
   let user;
   try {
     // NOTE: user settings are not used at all, hence I ommited this call. However, if there was a need to do that we could have getUserWithSettings func that would
@@ -43,7 +42,11 @@ const createAdmin = async () => {
     throw new Error(
       `User has to be truthy in order to set role, but is: ${user}`
     );
+  return user;
+};
 
+const createAdmin = async () => {
+  const user = await getUser();
   await setAdminRole(user.id);
 
   const promises = [
@@ -51,13 +54,11 @@ const createAdmin = async () => {
     // notify could also have more flexible signature. possible inspiration: https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/javascriptv3/example_code/sns/src/sns_publishsms.js#L31
     notifyUser(user.id, USER_ROLE_UPDATED, notifyAdmins(USER_ROLE_UPDATED)),
   ];
-
   const results = await Promise.allSettled(promises);
 
   results.forEach(({ status, value, reason }) => {
     if (status === "rejected") {
       console.log(reason);
-      throw new Error("Failed to send notification: ", value);
     }
   });
 };
