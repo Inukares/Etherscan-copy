@@ -1,16 +1,24 @@
-import { Web3Provider } from '@ethersproject/providers';
+import { Log, Web3Provider } from '@ethersproject/providers';
 import { useWeb3React } from '@web3-react/core';
 import { Contract, ethers, providers } from 'ethers';
 import ABI from './utils/DAIABI.json';
 import { useEffect, useState } from 'react';
 import './App.css';
+
 import ConnectToMetamask from './features/ConnectMetamask';
 import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
 import { ErrorWithMessage, toErrorWithMessage } from './shared/errorUtils';
 import { eventFilterv5 } from './utils/eventFilter';
+import { Fragment, LogDescription } from 'ethers/lib/utils';
+import { JsonFragment } from '@ethersproject/abi';
 const contractAddress = '0x6b175474e89094c44da98b954eedeac495271d0f';
+// based on the hash I know whether transaction is a transfer or not
+const TRANSFER_HASH = ethers.utils.keccak256(
+  ethers.utils.toUtf8Bytes('Transfer(address,address,uint256)')
+);
 
+type ABITYPE = typeof ABI;
 /**
  * GET A BLOCK with all transactions
  * FOR EACH TRANSACTION FETCH INFORMATION ABOUT THE TRANSACTIONS *
@@ -20,71 +28,132 @@ const contractAddress = '0x6b175474e89094c44da98b954eedeac495271d0f';
  */
 
 //  if((r.logs[k].topics[0] == tokenTransferHash) && (r.logs[k].topics.length == 3)) {
-  // 
+
+// IN order to run requests in parallel, could fire arbitrary number of calls and check if I get number of responses i want.
+// I can't know amount of logs I get from initial call upfront, but such paralellizaton would make things faster
+// subsequent calls (e.g having 200 more rows) would iterate based on the amount of requests fethced initially
 
 // TODO: more generalised name might be better later on
+
+const REQUESTS_IN_PARALLEL = 50;
+
+const parseLogs = (contractAddress: string, ABI: ABITYPE, logs: Log[]) => {
+  const contract = new ethers.Contract(contractAddress, ABI);
+  return logs.map((log) => contract.interface.parseLog(log));
+};
+
+const getLogs = async (
+  blockNumber: number,
+  provider: Web3Provider,
+  contractAddress: string,
+  ABI: ABITYPE,
+  minLogsCount: number = 0,
+  collectedTransactions: Array<LogDescription> = []
+): Promise<Array<LogDescription>> => {
+  console.log('running again!');
+  if (blockNumber <= 0) return collectedTransactions;
+
+  // useful for log parsing. otherwise would have to implement parsing manually
+  const promises = [];
+
+  let blockIdx = blockNumber;
+  for (let i = 0; i < REQUESTS_IN_PARALLEL; i++) {
+    promises.push(
+      provider.getLogs({
+        address: contractAddress,
+        fromBlock: blockIdx,
+        toBlock: blockIdx,
+      })
+    );
+    blockIdx -= 1;
+  }
+  const parsedTransactions = await Promise.allSettled(promises).then(
+    (responses) => {
+      return responses.reduce((acc, response) => {
+        if (response.status === 'rejected') return acc;
+
+        // getting only 'Transfer' logs as we only care about those
+        const transferLogs = response.value.filter((log) => {
+          return log.topics.length === 3 && log.topics[0] === TRANSFER_HASH;
+        });
+
+        const parsedLogs = parseLogs(contractAddress, ABI, transferLogs);
+
+        return [...acc, ...parsedLogs];
+      }, [] as Array<LogDescription>);
+    }
+  );
+
+  if (parsedTransactions.length < minLogsCount)
+    return await getLogs(
+      blockIdx,
+      provider,
+      contractAddress,
+      ABI,
+      minLogsCount,
+      [...collectedTransactions, ...parsedTransactions]
+    );
+
+  return parsedTransactions;
+};
+
 export const getBlockWithLogs = async (
   contractAddress: string,
   provider: any,
+  ABI: ABITYPE,
   numberOfResponses: number
 ) => {
-  // creating the interface of the ABI
-
+  // useful for log parsing. otherwise would have to implement parsing manually
+  const contract = new ethers.Contract(contractAddress, ABI);
   // intialize array for the logs
-  let logs: any[] = [];
   // get latest block number
   const latest = await provider.getBlockNumber();
   // intialize a counter for which block we're scraping starting at the most recent block
   let blockNumberIndex = latest;
+  let currentBlock;
 
-  // how does const logs = await provider.getLogs({address: contractAddress, fromBlock: currIdx, toBlock: currIdx})
-  // and logs.map(async(log) => {
-  //  if(log && log?.transactonHash) {
-  //   const tx = await provider.getTransaction(log.transactoinHash); return tx;
-  // } return null;
-  // })
-  // differ from provider.getBlockWIthTransactions ?
-  // is it only the address param in getLogs filtering?
+  const logs = await getLogs(
+    latest,
+    provider,
+    contractAddress,
+    ABI,
+    numberOfResponses,
+    []
+  );
+  return logs;
 
   // while loop runs until there are as many responses as desired
-  while (logs.length < numberOfResponses && blockNumberIndex > 0) {
-    // console.log(logs);
-    const blockWithTx = await provider.getBlockWithTransactions(
-      blockNumberIndex
-    );
-    console.log(blockWithTx);
-    const tempLogs = await provider.getLogs({
-      address: contractAddress,
-      // both fromBlock and toBlock are the index, meaning only one block's logs are pulled
-      fromBlock: blockNumberIndex,
-      toBlock: blockNumberIndex,
-    });
-    // an added console.log to help see what's going on
-    console.log(
-      'BLOCK: ',
-      blockNumberIndex,
-      ' NUMBER OF LOGS: ',
-      tempLogs.length
-    );
-    blockNumberIndex -= 1;
-    const transactions = tempLogs.map(async (log: any) => {
-      if (log && log?.transactionHash) {
-        const tx = await provider.getTransaction(log.transactionHash);
-        console.log(tx);
-        return tx;
-      }
-      return null;
-    });
+  // while (logs.length < numberOfResponses && blockNumberIndex > 0) {
+  //   // console.log(logs);
+  //   const tempLogs = await provider.getLogs({
+  //     address: contractAddress,
+  //     // both fromBlock and toBlock are the index, meaning only one block's logs are pulled
+  //     fromBlock: blockNumberIndex,
+  //     toBlock: blockNumberIndex,
+  //   });
+  //   console.log(
+  //     'BLOCK: ',
+  //     blockNumberIndex,
+  //     ' NUMBER OF LOGS: ',
+  //     tempLogs.length
+  //   );
+  //   blockNumberIndex -= 1;
+  //   if (logs && logs.length > 0) {
+  //     logs = logs.concat(tempLogs);
+  //   } else {
+  //     logs = [...tempLogs];
+  //   }
+  //   // logs = logs && logs.length > 0 ? [...logs, ...tempLogs] : [...tempLogs];
+  // }
 
-    if (logs && logs.length > 0) {
-      logs = logs.concat(tempLogs);
-    } else {
-      logs = [...tempLogs];
-    }
-    // logs = logs && logs.length > 0 ? [...logs, ...tempLogs] : [...tempLogs];
-  }
+  // const parsed = logs.map((log) => contract.interface.parseLog(log));
+  // each input indice corresponds to each arg indice
 
-  return logs;
+  // console.log(parsed);
+  // console.log(unindexedEvents);
+  // console.log(indexedEvents);
+  // const unindexedEvents = ABI.map(obj => obj.inputs.filter(event => event && event.indexed === false));
+  // const decodedLogs = logs.map(log => decoder.decode(unindexedEvents, log.data)
 };
 
 const decodeLogs = (logs: any, erc20abi: any) => {
@@ -124,7 +193,10 @@ function App() {
     const fetchAccounts = async () => {
       console.log(library);
       if (library) {
-        const logs = await getBlockWithLogs(contractAddress, library, 10);
+        console.log('no logs yet');
+        const logs = await getBlockWithLogs(contractAddress, library, ABI, 50);
+        console.log('yup got logs');
+
         console.log(logs);
         // const accounts = await library.send('eth_requestAccounts', []);
         // const contract = new ethers.Contract(contractAddress, ABI, library);
