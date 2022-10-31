@@ -49,11 +49,11 @@ function App() {
         const [logs, blocks] = await fetchLogs({
           blockNumber: latest,
           ABI,
-          collectedTransactions: [],
+          collectedLogs: [],
           contractAddress,
-          minLogsCount: 1,
+          minLogsCount: 3,
           provider: library,
-          parallelRequests: 1,
+          parallelRequests: 3,
         });
         console.log(logs, blocks);
 
