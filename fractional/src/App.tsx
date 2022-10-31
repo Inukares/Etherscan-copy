@@ -8,12 +8,9 @@ import './App.css';
 import ConnectToMetamask from './features/ConnectMetamask';
 import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
-import { ErrorWithMessage, toErrorWithMessage } from './shared/errorUtils';
-import { Fragment, LogDescription } from 'ethers/lib/utils';
-import { JsonFragment } from '@ethersproject/abi';
-import { fetchLogs } from './utils/fetchLogs';
+import { ErrorWithMessage } from './shared/errorUtils';
+import { fetchLogs } from './utils/fetchLogs/fetchLogs';
 const contractAddress = '0x6b175474e89094c44da98b954eedeac495271d0f';
-// based on the hash I know whether transaction is a transfer or not
 
 /**
  * GET A BLOCK with all transactions
@@ -56,12 +53,7 @@ function App() {
           parallelRequests: 3,
         });
         console.log(logs, blocks);
-
-        // const logs = await fetchLogs({b});
         console.log('yup got logs');
-
-        // const accounts = await library.send('eth_requestAccounts', []);
-        // const contract = new ethers.Contract(contractAddress, ABI, library);
       }
     };
     fetchAccounts();

@@ -1,8 +1,8 @@
-import DAIABI from './DAIABI.json';
-import { EtherscanProvider, Log, Web3Provider } from '@ethersproject/providers';
+import { Log, Web3Provider } from '@ethersproject/providers';
+import DAIABI from '../DAIABI.json';
 import { LogDescription } from 'ethers/lib/utils';
-import { TRANSFER_HASH } from './constants';
 import { ethers, providers } from 'ethers';
+import { TRANSFER_HASH } from '../constants';
 
 type ABI = typeof DAIABI;
 
@@ -27,7 +27,7 @@ type FetchLogsParams = {
   parallelRequests: number;
 };
 
-// @ts-ignore
+// TODO: Add caching so that requests to get the same block are retrieved from cache
 export const fetchLogs = async ({
   blockNumber,
   provider,
@@ -81,16 +81,18 @@ export const fetchLogs = async ({
     (responses) => {
       return responses.reduce((acc, response) => {
         if (response.status === 'rejected') return acc;
+        console.log('val', response.value);
 
         acc[response.value.number] = { ...response.value };
         return acc;
       }, {} as Record<string, ethers.providers.Block>);
     }
   );
+  console.log(blocksMap);
   const combinedLogs = [...collectedLogs, ...rawLogs];
   const combinedBlocksMap = { ...blocksMap, ...collectedBlocksMap };
 
-  if (rawLogs.length < minLogsCount) {
+  if (combinedLogs.length < minLogsCount) {
     return await fetchLogs({
       blockNumber: blockIdx,
       provider,
