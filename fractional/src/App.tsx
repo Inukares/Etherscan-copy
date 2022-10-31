@@ -46,10 +46,10 @@ function App() {
       if (library) {
         console.log('no logs yet');
         const latest = await library.getBlockNumber();
-        const [logs, blocks] = await fetchLogs({
+        const { logs, blocks } = await fetchLogs({
           blockNumber: latest,
-          ABI,
           collectedLogs: [],
+          collectedBlocksMap: {},
           contractAddress,
           minLogsCount: 3,
           provider: library,

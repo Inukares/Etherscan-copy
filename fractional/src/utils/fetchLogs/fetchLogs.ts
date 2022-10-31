@@ -1,5 +1,5 @@
 import DAIABI from './DAIABI.json';
-import { Log, Web3Provider } from '@ethersproject/providers';
+import { EtherscanProvider, Log, Web3Provider } from '@ethersproject/providers';
 import { LogDescription } from 'ethers/lib/utils';
 import { TRANSFER_HASH } from './constants';
 import { ethers, providers } from 'ethers';
@@ -15,37 +15,33 @@ export const parseLog = (contract: ethers.Contract, log: Log) => {
   return contract.interface.parseLog(log);
 };
 
-type FetchLogs = ({
-  blockNumber,
-  provider,
-  contractAddress,
-  ABI,
-  minLogsCount = 0,
-  collectedLogs = [],
-  parallelRequests = 5,
-}: {
+type BlocksMap = Record<string, ethers.providers.Block>;
+
+type FetchLogsParams = {
   blockNumber: number;
   provider: Web3Provider;
   contractAddress: string;
-  ABI: ABI;
   minLogsCount: number;
   collectedLogs: Array<Log>;
+  collectedBlocksMap: BlocksMap;
   parallelRequests: number;
-}) => Promise<Array<Log>>;
+};
 
 // @ts-ignore
-export const fetchLogs: FetchLogs = async ({
+export const fetchLogs = async ({
   blockNumber,
   provider,
   contractAddress,
-  ABI,
   minLogsCount,
   collectedLogs,
   parallelRequests,
-}) => {
+  collectedBlocksMap,
+}: FetchLogsParams): Promise<{ logs: Array<Log>; blocks: BlocksMap }> => {
   console.log('running again!');
-  if (blockNumber <= 0) return collectedLogs;
-  const contract = new ethers.Contract(contractAddress, ABI);
+  if (blockNumber <= 0) {
+    return { logs: collectedLogs, blocks: collectedBlocksMap };
+  }
+
   const promises = [];
   let blockIdx = blockNumber;
 
@@ -61,9 +57,7 @@ export const fetchLogs: FetchLogs = async ({
     blockIdx -= 1;
   }
 
-  const blockPromises: any[] = [];
-
-  // [{response: {value: []}}]
+  const blockPromises: Promise<ethers.providers.Block>[] = [];
 
   const rawLogs = await Promise.allSettled(promises).then((responses) => {
     return responses.reduce((acc, response) => {
@@ -81,21 +75,33 @@ export const fetchLogs: FetchLogs = async ({
     }, [] as Log[]);
   });
 
-  // const blocks = await Promise.
+  // blocks structure
+  // {158205: {...blockStuff}, 123141: {}}
+  const blocksMap = await Promise.allSettled(blockPromises).then(
+    (responses) => {
+      return responses.reduce((acc, response) => {
+        if (response.status === 'rejected') return acc;
+
+        acc[response.value.number] = { ...response.value };
+        return acc;
+      }, {} as Record<string, ethers.providers.Block>);
+    }
+  );
   const combinedLogs = [...collectedLogs, ...rawLogs];
+  const combinedBlocksMap = { ...blocksMap, ...collectedBlocksMap };
 
   if (rawLogs.length < minLogsCount) {
     return await fetchLogs({
       blockNumber: blockIdx,
       provider,
       contractAddress,
-      ABI,
       minLogsCount,
       collectedLogs: combinedLogs,
+      collectedBlocksMap: combinedBlocksMap,
       parallelRequests,
     });
   }
-  return combinedLogs;
+  return { logs: combinedLogs, blocks: combinedBlocksMap };
 };
 
 // needed to get timestamp for transaction as RPC doesn't give that information from log ot of the box
