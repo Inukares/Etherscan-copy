@@ -10,6 +10,7 @@ import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
 import { ErrorWithMessage } from './shared/errorUtils';
 import { fetchLogs } from './utils/fetchLogs/fetchLogs';
+import { mapToTransferHistory } from './utils/mapToTransferHistory/mapToTransferHistory';
 const contractAddress = '0x6b175474e89094c44da98b954eedeac495271d0f';
 
 /**
@@ -41,7 +42,6 @@ function App() {
   useEffect(() => {
     const fetchAccounts = async () => {
       if (library) {
-        console.log('no logs yet');
         const latest = await library.getBlockNumber();
         const { logs, blocks } = await fetchLogs({
           blockNumber: latest,
@@ -52,8 +52,12 @@ function App() {
           provider: library,
           parallelRequests: 3,
         });
-        console.log(logs, blocks);
-        console.log('yup got logs');
+        const transferHistory = mapToTransferHistory(
+          logs,
+          blocks,
+          contractAddress,
+          ABI
+        );
       }
     };
     fetchAccounts();

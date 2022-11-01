@@ -3,19 +3,10 @@ import DAIABI from '../DAIABI.json';
 import { LogDescription } from 'ethers/lib/utils';
 import { ethers, providers } from 'ethers';
 import { TRANSFER_HASH } from '../constants';
+import { BlocksMap } from '../types';
 
-type ABI = typeof DAIABI;
-
-export const parseLogs = (contractAddress: string, ABI: ABI, logs: Log[]) => {
-  const contract = new ethers.Contract(contractAddress, ABI);
-  return logs.map((log) => contract.interface.parseLog(log));
-};
-
-export const parseLog = (contract: ethers.Contract, log: Log) => {
-  return contract.interface.parseLog(log);
-};
-
-type BlocksMap = Record<string, ethers.providers.Block>;
+// export const parseLogs = (contractAddress: string, ABI: ABI, logs: Log[]) => {
+//   const contract = new ethers.Contract(contractAddress, ABI);
 
 type FetchLogsParams = {
   blockNumber: number;
@@ -63,7 +54,10 @@ export const fetchLogs = async ({
     return responses.reduce((acc, response) => {
       console.log(responses);
       debugger;
-      if (response.status === 'rejected') return acc;
+      if (response.status === 'rejected') {
+        console.warn('Failed to fatch log!::', response);
+        return acc;
+      }
       // If block has any Transfer logs fetch it to get timestamp
       // other possible solution would be to always fetch blocks alongside logs, but this way
       // I'm reducing fetches amount to the absolute minimum, by making call only when logs are present
@@ -80,15 +74,18 @@ export const fetchLogs = async ({
   const blocksMap = await Promise.allSettled(blockPromises).then(
     (responses) => {
       return responses.reduce((acc, response) => {
-        if (response.status === 'rejected') return acc;
-        console.log('val', response.value);
+        if (response.status === 'rejected') {
+          console.warn('Failed to fetch block!', response);
+          return acc;
+        }
+        // console.log('val', response.value);
 
         acc[response.value.number] = { ...response.value };
         return acc;
       }, {} as Record<string, ethers.providers.Block>);
     }
   );
-  console.log(blocksMap);
+  // console.log(blocksMap);
   const combinedLogs = [...collectedLogs, ...rawLogs];
   const combinedBlocksMap = { ...blocksMap, ...collectedBlocksMap };
 
