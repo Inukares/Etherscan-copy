@@ -1,5 +1,5 @@
-import { fetchLogsMockResponse } from './../mocks';
-import { fetchLogs } from './fetchLogs';
+import { fetchLogsMockResponse } from '../mocks';
+import { fetchLogsWithBlocks } from './fetchLogsWithBlocks';
 import { ethers } from 'ethers';
 import { mockLogs, mockBlock, mockBlock2 } from '../mocks';
 import { fetchJson } from 'ethers/lib/utils';
@@ -7,7 +7,7 @@ import { BlocksMap } from '../types';
 
 type Provider = Record<string, any>;
 
-describe(fetchLogs, () => {
+describe(fetchLogsWithBlocks, () => {
   it('fethes logs and blocks', async () => {
     let provider: Provider = {};
     const { logs: expectedLogs, blocks: expectedBlocks } =
@@ -29,7 +29,7 @@ describe(fetchLogs, () => {
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
 
-    const { logs, blocks } = await fetchLogs({
+    const { logs, blocks } = await fetchLogsWithBlocks({
       blockNumber: 1000,
       // @ts-ignore-next-line
       provider,
@@ -64,7 +64,7 @@ describe(fetchLogs, () => {
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
 
-    const { logs, blocks } = await fetchLogs({
+    const { logs, blocks } = await fetchLogsWithBlocks({
       blockNumber: 1000,
       // @ts-ignore-next-line
       provider,
@@ -99,7 +99,7 @@ describe(fetchLogs, () => {
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
 
-    const { logs, blocks } = await fetchLogs({
+    const { logs, blocks } = await fetchLogsWithBlocks({
       blockNumber: 1000,
       // @ts-ignore-next-line
       provider,
