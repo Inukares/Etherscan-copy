@@ -3,7 +3,7 @@ import { fetchLogsWithBlocks } from './fetchLogsWithBlocks';
 import { ethers } from 'ethers';
 import { mockLogs, mockBlock, mockBlock2 } from '../mocks';
 import { fetchJson } from 'ethers/lib/utils';
-import { BlocksMap } from '../types';
+import { BlocksMap } from '../../shared/types';
 
 type Provider = Record<string, any>;
 

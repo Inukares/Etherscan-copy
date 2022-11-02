@@ -1,4 +1,4 @@
-import { BlocksMap } from './../types';
+import { BlocksMap, Transfer } from '../../shared/types';
 import { Log } from '@ethersproject/providers';
 import { ContractInterface, ethers } from 'ethers';
 
@@ -6,21 +6,13 @@ export const parseLog = (contract: ethers.Contract, log: Log) => {
   return contract.interface.parseLog(log);
 };
 
-export type Transfer = {
-  to: string;
-  from: string;
-  value: number;
-  address: string;
-  timestamp: number | null;
-};
-
 const mapper = (
   log: Log,
   parsedLog: ethers.utils.LogDescription,
   blocksMap: BlocksMap
-) => ({
+): Transfer => ({
   timestamp: blocksMap[log.blockNumber]?.timestamp ?? null,
-  address: log.address,
+  txHash: log.transactionHash,
   from: parsedLog.args[0],
   to: parsedLog.args[1],
   value: ethers.utils.formatEther(parsedLog.args[2]),
@@ -31,7 +23,7 @@ export const mapToTransferHistory = (
   blocksMap: BlocksMap,
   contractAddress: string,
   ABI: ContractInterface
-): any => {
+): Transfer[] => {
   const contract = new ethers.Contract(contractAddress, ABI);
   const transfers = logs.map((log) => {
     const parsedLog = parseLog(contract, log);

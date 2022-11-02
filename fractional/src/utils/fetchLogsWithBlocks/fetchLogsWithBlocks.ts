@@ -1,7 +1,7 @@
 import { Log, Web3Provider } from '@ethersproject/providers';
 import { ethers } from 'ethers';
-import { TRANSFER_HASH } from '../constants';
-import { BlocksMap } from '../types';
+import { TRANSFER_HASH } from '../../shared/constants';
+import { BlocksMap } from '../../shared/types';
 
 type FetchLogsParams = {
   blockNumber: number;
