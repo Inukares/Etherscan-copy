@@ -1,24 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useWeb3React } from '@web3-react/core';
 
-import { injected } from '../connectors';
+import { network } from '../connectors';
 
 export function useEagerConnect() {
   const { activate, active } = useWeb3React();
 
   const [tried, setTried] = useState(false);
   useEffect(() => {
-    injected.isAuthorized().then((isAuthorized) => {
-      console.log('useEagerConnect:', { active, isAuthorized });
-      if (isAuthorized) {
-        activate(injected, undefined, true).catch(() => {
-          setTried(true);
-        });
-      } else {
+    if (active) return;
+    const activateNetwork = async () => {
+      try {
+        await activate(network);
+      } catch (_error) {
+        // gets caught by web3react anyway, but console logging for better experience
+        console.error(_error);
         setTried(true);
       }
-    });
-  }, [activate, active]); // intentionally only running on mount
+    };
+    activateNetwork();
+  }, [activate, active, tried]); // intentionally only running on mount
 
   // if the connection worked, wait until we get confirmation of that to flip the flag
   useEffect(() => {

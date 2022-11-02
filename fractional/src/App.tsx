@@ -11,6 +11,7 @@ import { mapToTransferHistory } from './utils/mapToTransferHistory/mapToTransfer
 import { fetchLogsWithBlocks } from './utils/fetchLogsWithBlocks/fetchLogsWithBlocks';
 import { BlocksMap, Transfer } from './shared/types';
 import { contractAddress } from './shared/constants';
+import { network } from './connectors';
 
 // TODO: Verify if the mapping of transfer's value is correct.
 function App() {
@@ -18,12 +19,8 @@ function App() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [transferHistory, setTransferHistory] = useState<Transfer[]>();
 
-  const { chainId, account, activate, active, library } =
-    useWeb3React<Web3Provider>();
-
-  // TODO: for now leave blank. chekc re-adding later
-  // const triedEager = useEagerConnect();
-  // useInactiveListener(!triedEager);
+  const { library } = useWeb3React<Web3Provider>();
+  const triedEager = useEagerConnect();
 
   useEffect(() => {
     const fetchAccounts = async () => {
