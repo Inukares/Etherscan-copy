@@ -15,9 +15,11 @@ import { contractAddress } from './shared/constants';
 function App() {
   const [blocks, setBlocks] = useState<BlocksMap>({});
   const [logs, setLogs] = useState<Log[]>([]);
+  const [from, setFrom] = useState<string>();
+  const [to, setTo] = useState<string>();
   const [transferHistory, setTransferHistory] = useState<Transfer[]>();
 
-  const { library } = useWeb3React<Web3Provider>();
+  const { library, error } = useWeb3React<Web3Provider>();
   const triedEager = useEagerConnect();
 
   useEffect(() => {
@@ -29,9 +31,11 @@ function App() {
           collectedLogs: [],
           collectedBlocksMap: {},
           contractAddress,
-          minLogsCount: 10,
+          minLogsCount: 2,
           provider: library,
-          parallelRequests: 10,
+          parallelRequests: 2,
+          from,
+          to,
         });
         const history = mapToTransferHistory(
           logs,
@@ -45,12 +49,50 @@ function App() {
       }
     };
     fetchAccounts();
-  }, [library]);
+  }, [from, library, to]);
+
+  if (error) {
+    console.error(error);
+    return (
+      <div>
+        There was an error while fetching data. Please see the console for more
+        details
+      </div>
+    );
+  }
 
   return (
     <div>
-      <div className="flex items-center align-center border-2 border-indigo-600">
-        {transferHistory ? <TranfersGrid data={transferHistory} /> : null}
+      <div className="flex align-center justify-start  w-full h-10">
+        <div className="inline-flex">
+          <label htmlFor="from">From</label>
+          <div className="inputWrapper">
+            <input
+              onChange={(e) => setFrom(e.target.value)}
+              name="from"
+              className="w-32 text-slate-200 border-black border-solid"
+              type={'text'}
+            />
+          </div>
+        </div>
+
+        <div className="inline-flex">
+          <label htmlFor="to">To</label>
+          <input
+            onChange={(e) => setTo(e.target.value)}
+            name="to"
+            className="w-32 border-black border-solid"
+            type={'text'}
+          />
+        </div>
+      </div>
+
+      <div>
+        {transferHistory ? (
+          <TranfersGrid data={transferHistory} />
+        ) : (
+          <h2>Loading...</h2>
+        )}
       </div>
     </div>
   );
