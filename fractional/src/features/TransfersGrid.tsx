@@ -4,8 +4,13 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { info } from 'console';
 import { Transfer } from '../shared/types';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { getTimeElapsed } from '../utils/getTimeElapsed';
+
+dayjs.extend(relativeTime);
 
 const columnHelper = createColumnHelper<Transfer>();
 const columns = [
@@ -20,7 +25,7 @@ const columns = [
   columnHelper.accessor('timestamp', {
     cell: (info) =>
       info.getValue() !== null
-        ? getTimeElapsed(Date.now() - (info.getValue() as number))
+        ? getTimeElapsed((info.getValue() as number) * 1000)
         : '-',
     header: () => <span>Age</span>,
   }),
@@ -38,7 +43,7 @@ export const TranfersGrid = ({ data }: { data: any }) => {
   });
 
   return (
-    <table>
+    <table className="table-auto">
       <thead>
         {table.getHeaderGroups().map((headerGroup) => (
           <tr key={headerGroup.id}>

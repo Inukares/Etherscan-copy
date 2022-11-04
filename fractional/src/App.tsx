@@ -3,7 +3,6 @@ import { useWeb3React } from '@web3-react/core';
 import ABI from './utils/DAIABI.json';
 import { useEffect, useState } from 'react';
 import './App.css';
-import ConnectToMetamask from './features/ConnectMetamask';
 import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
 import { TranfersGrid } from './features/TransfersGrid';
@@ -11,7 +10,6 @@ import { mapToTransferHistory } from './utils/mapToTransferHistory/mapToTransfer
 import { fetchLogsWithBlocks } from './utils/fetchLogsWithBlocks/fetchLogsWithBlocks';
 import { BlocksMap, Transfer } from './shared/types';
 import { contractAddress } from './shared/constants';
-import { network } from './connectors';
 
 // TODO: Verify if the mapping of transfer's value is correct.
 function App() {
@@ -52,7 +50,6 @@ function App() {
   return (
     <div>
       <div className="flex items-center align-center border-2 border-indigo-600">
-        <ConnectToMetamask />
         {transferHistory ? <TranfersGrid data={transferHistory} /> : null}
       </div>
     </div>

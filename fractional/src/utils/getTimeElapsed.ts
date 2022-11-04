@@ -8,7 +8,7 @@ const YEAR = DAY * 365;
 // Shameless copy-paste: https://stackoverflow.com/questions/3177836/how-to-format-time-since-xxx-e-g-4-minutes-ago-similar-to-stack-exchange-site#answer-72973090
 // Could also make use of Inlt.DateFormatter, but leaving it like this for now
 export const getTimeElapsed = (date: number): string => {
-  const secondsAgo = Math.round((Date.now() - Number(date)) / 1000);
+  const secondsAgo = Math.round((Date.now() - date) / 1000);
 
   if (secondsAgo < MINUTE) {
     return secondsAgo + ` second${secondsAgo !== 1 ? 's' : ''} ago`;
