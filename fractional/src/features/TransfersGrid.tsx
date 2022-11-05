@@ -5,7 +5,6 @@ import {
   Row,
   useReactTable,
 } from '@tanstack/react-table';
-import './TransfersGrid.css';
 import { Transfer } from '../shared/types';
 import { getTimeElapsed } from '../utils/getTimeElapsed';
 
