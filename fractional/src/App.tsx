@@ -7,16 +7,19 @@ import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
 import { TranfersGrid } from './features/TransfersGrid';
 import { mapToTransferHistory } from './utils/mapToTransferHistory/mapToTransferHistory';
-import { fetchLogsWithBlocks } from './utils/fetchLogsWithBlocks/fetchLogsWithBlocks';
+import {
+  fetchLogsWithBlocks,
+  mapTopicsToFilter,
+} from './utils/fetchLogsWithBlocks/fetchLogsWithBlocks';
 import { BlocksMap, Transfer } from './shared/types';
-import { contractAddress } from './shared/constants';
+import { contractAddress, TRANSFER_HASH } from './shared/constants';
 
 // TODO: Verify if the mapping of transfer's value is correct.
 function App() {
   const [blocks, setBlocks] = useState<BlocksMap>({});
   const [logs, setLogs] = useState<Log[]>([]);
-  const [from, setFrom] = useState<string>();
-  const [to, setTo] = useState<string>();
+  const [from, setFrom] = useState<string>('');
+  const [to, setTo] = useState<string>('');
   const [transferHistory, setTransferHistory] = useState<Transfer[]>();
 
   const { library, error } = useWeb3React<Web3Provider>();
@@ -27,18 +30,16 @@ function App() {
       if (library) {
         const latest = await library.getBlockNumber();
         const { logs, blocks } = await fetchLogsWithBlocks({
-          blockNumber: latest,
           collectedLogs: [],
           collectedBlocksMap: {},
           contractAddress,
-          minLogsCount: 2,
+          minLogsCount: 100,
           provider: library,
-          parallelRequests: 2,
-          from,
-          to,
+          topics: mapTopicsToFilter([TRANSFER_HASH, from, to]),
+          blocksRange: { toBlock: latest, fromBlock: latest - 10 },
         });
         const history = mapToTransferHistory(
-          logs,
+          logs.sort((a, b) => b.blockNumber - a.blockNumber),
           blocks,
           contractAddress,
           ABI
