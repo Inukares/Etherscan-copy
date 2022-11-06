@@ -1,7 +1,7 @@
 import { Log, Web3Provider } from '@ethersproject/providers';
 import { useWeb3React } from '@web3-react/core';
 import ABI from './utils/DAIABI.json';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import './App.css';
 import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
@@ -14,43 +14,65 @@ import {
 import { BlocksMap, Transfer } from './shared/types';
 import { contractAddress, TRANSFER_HASH } from './shared/constants';
 
-// TODO: Verify if the mapping of transfer's value is correct.
+const useFetchTransfers = ({
+  from,
+  to,
+}: {
+  from: string;
+  to: string;
+}): {
+  transfers: Transfer[];
+  error: unknown;
+  connectionError: Error | undefined;
+  loading: boolean;
+} => {
+  const { library, error: connectionError } = useWeb3React<Web3Provider>();
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState();
+
+  const fetchLogs = useCallback(async () => {
+    if (library) {
+      setLoading(true);
+      const latest = await library.getBlockNumber();
+      const { logs, blocks } = await fetchLogsWithBlocks({
+        collectedLogs: [],
+        collectedBlocksMap: {},
+        contractAddress,
+        minLogsCount: 20,
+        provider: library,
+        topics: mapTopicsToFilter([TRANSFER_HASH, from, to]),
+        blocksRange: { toBlock: latest, fromBlock: latest - 10 },
+      });
+      const history = mapToTransferHistory(
+        logs, //.sort((a, b) => b.blockNumber - a.blockNumber),
+        blocks,
+        contractAddress,
+        ABI
+      );
+      setTransfers(history);
+      setLoading(false);
+    }
+  }, [from, library, to]);
+
+  // fetch transfers on mount or on provider change
+  useEffect(() => {
+    fetchLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [library]);
+
+  return { transfers, error, connectionError, loading };
+};
+
 function App() {
-  const [blocks, setBlocks] = useState<BlocksMap>({});
-  const [logs, setLogs] = useState<Log[]>([]);
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
-  const [transferHistory, setTransferHistory] = useState<Transfer[]>();
-
-  const { library, error } = useWeb3React<Web3Provider>();
-  const triedEager = useEagerConnect();
-
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      if (library) {
-        const latest = await library.getBlockNumber();
-        const { logs, blocks } = await fetchLogsWithBlocks({
-          collectedLogs: [],
-          collectedBlocksMap: {},
-          contractAddress,
-          minLogsCount: 100,
-          provider: library,
-          topics: mapTopicsToFilter([TRANSFER_HASH, from, to]),
-          blocksRange: { toBlock: latest, fromBlock: latest - 10 },
-        });
-        const history = mapToTransferHistory(
-          logs.sort((a, b) => b.blockNumber - a.blockNumber),
-          blocks,
-          contractAddress,
-          ABI
-        );
-        setBlocks(blocks);
-        setLogs(logs);
-        setTransferHistory(history);
-      }
-    };
-    fetchAccounts();
-  }, [from, library, to]);
+  useEagerConnect();
+  const { transfers, connectionError, error } = useFetchTransfers({ from, to });
+  if (connectionError) {
+    console.error(connectionError);
+    return <div>Failed to connect to Ethereum node.</div>;
+  }
 
   if (error) {
     console.error(error);
@@ -89,11 +111,7 @@ function App() {
       </div>
 
       <div>
-        {transferHistory ? (
-          <TranfersGrid data={transferHistory} />
-        ) : (
-          <h2>Loading...</h2>
-        )}
+        {transfers ? <TranfersGrid data={transfers} /> : <h2>Loading...</h2>}
       </div>
     </div>
   );

@@ -67,7 +67,6 @@ export const fetchLogsWithBlocks = async ({
   );
 
   const combinedLogs = [...collectedLogs, ...logs];
-  console.log(combinedLogs.length);
   const combinedBlocksMap = { ...blocksMap, ...collectedBlocksMap };
   // latter condition prevents infinite loop
   if (combinedLogs.length < minLogsCount && fromBlock !== toBlock) {
