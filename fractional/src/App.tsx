@@ -1,96 +1,11 @@
 import { Web3Provider } from '@ethersproject/providers';
 import { useWeb3React } from '@web3-react/core';
-import ABI from './utils/DAIABI.json';
 import React, { useEffect, useState, useCallback } from 'react';
 import './App.css';
 import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
-import PQueue from 'p-queue';
 import { TranfersGrid } from './features/TransfersGrid';
-import { mapToTransferHistory } from './utils/mapToTransferHistory/mapToTransferHistory';
-import {
-  fetchLogsWithBlocks,
-  mapTopicsToFilter,
-} from './utils/fetchLogsWithBlocks/fetchLogsWithBlocks';
-import { BlocksMap, Transfer } from './shared/types';
-import { contractAddress, TRANSFER_HASH } from './shared/constants';
-
-type FetchTransfersParams = {
-  from?: string;
-  to?: string;
-  blocksRange?: { toBlock?: number; fromBlock?: number };
-  minLogsCount: number;
-};
-
-const useLazyFetchTransfers = ({
-  library,
-}: {
-  library: Web3Provider | undefined;
-}): {
-  transfers: Transfer[];
-  error: unknown;
-  loading: boolean;
-  fetchTransfers: ({
-    from,
-    to,
-    blocksRange,
-    minLogsCount,
-  }: FetchTransfersParams) => Promise<void>;
-} => {
-  const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>();
-
-  const fetchTransfers = useCallback(
-    async ({
-      from,
-      to,
-      blocksRange,
-      minLogsCount,
-    }: {
-      from?: string;
-      to?: string;
-      blocksRange?: { toBlock?: number; fromBlock?: number };
-      minLogsCount: number;
-    }) => {
-      if (!library) {
-        setLoading(false);
-        setTransfers([]);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        console.log('frmo inner func', blocksRange);
-        const { logs, blocks } = await fetchLogsWithBlocks({
-          collectedLogs: [],
-          collectedBlocksMap: {},
-          contractAddress,
-          minLogsCount,
-          provider: library,
-          promiseQueue: new PQueue({ interval: 1000, concurrency: 5 }),
-          topics: mapTopicsToFilter([TRANSFER_HASH, from ?? null, to ?? null]),
-          blocksRange, //{ toBlock: latest, fromBlock: latest - 30 },
-        });
-        console.log(logs, blocks);
-        const history = mapToTransferHistory(
-          logs.sort((a, b) => b.blockNumber - a.blockNumber),
-          blocks,
-          contractAddress,
-          ABI
-        );
-        setTransfers(history);
-      } catch (e) {
-        console.error(e);
-        setError(e);
-      }
-      setLoading(false);
-    },
-    [library]
-  );
-
-  return { transfers, error, loading, fetchTransfers };
-};
+import { useLazyFetchTransfers } from './hooks/useLazyFetchTransfers';
 
 // TODO: Verify all error-prone paths.
 // TODO: Correct inconsitent namings for errors, block vs blocksRange, etc

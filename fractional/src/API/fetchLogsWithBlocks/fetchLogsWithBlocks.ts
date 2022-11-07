@@ -1,24 +1,14 @@
 import PQueue from 'p-queue';
 import { QueueAddOptions } from 'p-queue';
 import PriorityQueue from 'p-queue/dist/priority-queue';
-import { TRANSFER_HASH } from './../../shared/constants';
+import { TRANSFER_HASH } from '../../shared/constants';
 import { Log, Web3Provider } from '@ethersproject/providers';
 import { ethers } from 'ethers';
-import { BlocksMap } from '../../shared/types';
+import { BlocksMap, Topics } from '../../shared/types';
+import { isNumber } from '../../utils/isNumber';
+import { getSanitizedParams } from './getSanitizedParams';
 
-export const mapTopicsToFilter = (topics: Topics): Array<string | null> => {
-  const [transfer_hash, from, to] = topics;
-  const filter = [transfer_hash];
-  if (typeof from === 'string' && from)
-    filter.push(ethers.utils.hexZeroPad(from, 32));
-  if (typeof to === 'string' && to)
-    filter.push(ethers.utils.hexZeroPad(to, 32));
-  return filter;
-};
-
-type Topics = Array<string | null>;
-
-type FetchLogsParams = {
+export type FetchLogsParams = {
   provider: Web3Provider;
   contractAddress: string;
   minLogsCount: number;
@@ -29,50 +19,6 @@ type FetchLogsParams = {
   promiseQueue: PQueue<PriorityQueue, QueueAddOptions>;
 };
 
-type Filter = {
-  address: string;
-  topics: FetchLogsParams['topics'];
-  fromBlock?: number;
-  toBlock?: number;
-};
-
-const getSanitizedParams = ({
-  address,
-  topics,
-  blockRange,
-}: {
-  address: string;
-  topics: Topics;
-  blockRange?: {
-    fromBlock?: number;
-    toBlock?: number;
-  };
-}) => {
-  const filter: Filter = { address, topics };
-  let blockRangeCopy;
-  if (typeof blockRange === 'object') {
-    blockRangeCopy = { ...blockRange };
-  }
-  console.log(blockRangeCopy);
-
-  let fromBlock = blockRangeCopy?.fromBlock;
-  let toBlock = blockRangeCopy?.toBlock;
-  if (typeof toBlock === 'number') {
-    filter.toBlock = toBlock;
-  }
-
-  if (typeof fromBlock === 'number') {
-    if (fromBlock < 0) {
-      fromBlock = 0;
-    }
-    filter.fromBlock = fromBlock;
-  }
-  return { filter, fromBlock, toBlock };
-};
-
-const isNumber = (value: unknown): value is number =>
-  typeof value === 'number' && !Number.isNaN(value);
-
 /**
  * There's no way to know how many logs are there for specific filter
  * That enforces implementing pagination of some sort in order to get desired amount of logs.
@@ -81,8 +27,6 @@ const isNumber = (value: unknown): value is number =>
  * 2) Get logs from a range of blocks and if response doesn't containt min amount, recurisvely fetch logs but this time starting at the end of last iteration.
  *
  * Below function favors 2nd approach as it is much faster and can easily incorporate additional logic for iterations and failures
- *
- *
  * */
 
 export const fetchLogsWithBlocks = async ({
@@ -103,7 +47,7 @@ export const fetchLogsWithBlocks = async ({
   console.log(filter);
 
   // looped through all of the blocks up to genesis block
-  if (typeof toBlock === 'number' && toBlock <= 0) {
+  if (isNumber(toBlock) && toBlock <= 0) {
     return { logs: collectedLogs, blocks: collectedBlocksMap };
   }
 
@@ -131,7 +75,7 @@ export const fetchLogsWithBlocks = async ({
 
   // when there is no range provided it's not possible to determine iterating logic
   // could be refactored to allow custom iteration logic
-  if (typeof fromBlock !== 'number' || typeof toBlock !== 'number') {
+  if (isNumber(fromBlock) || isNumber(toBlock)) {
     return { logs, blocks: blocksMap };
   }
   const combinedLogs = [...collectedLogs, ...logs];
