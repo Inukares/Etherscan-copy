@@ -1,10 +1,11 @@
-import { Log, Web3Provider } from '@ethersproject/providers';
+import { Web3Provider } from '@ethersproject/providers';
 import { useWeb3React } from '@web3-react/core';
 import ABI from './utils/DAIABI.json';
 import { useEffect, useState, useCallback } from 'react';
 import './App.css';
 import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
+import PQueue from 'p-queue';
 import { TranfersGrid } from './features/TransfersGrid';
 import { mapToTransferHistory } from './utils/mapToTransferHistory/mapToTransferHistory';
 import {
@@ -41,8 +42,9 @@ const useFetchTransfers = ({
         contractAddress,
         minLogsCount: 20,
         provider: library,
+        promiseQueue: new PQueue({ interval: 1000, concurrency: 5 }),
         topics: mapTopicsToFilter([TRANSFER_HASH, from, to]),
-        blocksRange: { toBlock: latest, fromBlock: latest - 10 },
+        blocksRange: { toBlock: latest, fromBlock: latest - 30 },
       });
       const history = mapToTransferHistory(
         logs, //.sort((a, b) => b.blockNumber - a.blockNumber),

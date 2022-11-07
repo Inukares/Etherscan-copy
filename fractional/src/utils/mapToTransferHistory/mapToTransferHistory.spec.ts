@@ -17,11 +17,12 @@ describe(mapToTransferHistory, () => {
 
     const expected = [
       {
-        address: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
         from: '0xA7d0b6A1Edf7e6aaf7A8D4BD19160c9dC371ca41',
         timestamp: 1667216375,
         to: '0x5f65f7b609678448494De4C87521CdF6cEf1e932',
-        value: '9992199361900000000000',
+        value: '9992.1993619',
+        txHash:
+          '0xc2ad454ed46068fe00d67a7383dc6ec7ae11452ab0753b3b6d5c47c1cc99aa58',
       },
     ];
     expect(result).toEqual(expected);
@@ -38,11 +39,12 @@ describe(mapToTransferHistory, () => {
 
     const expected = [
       {
-        txHash: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
         from: '0xA7d0b6A1Edf7e6aaf7A8D4BD19160c9dC371ca41',
         timestamp: null,
         to: '0x5f65f7b609678448494De4C87521CdF6cEf1e932',
-        value: '9992199361900000000000',
+        txHash:
+          '0xc2ad454ed46068fe00d67a7383dc6ec7ae11452ab0753b3b6d5c47c1cc99aa58',
+        value: '9992.1993619',
       },
     ];
     expect(result).toEqual(expected);
