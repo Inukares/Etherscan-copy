@@ -1,7 +1,7 @@
 import { Web3Provider } from '@ethersproject/providers';
 import { useWeb3React } from '@web3-react/core';
 import ABI from './utils/DAIABI.json';
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import './App.css';
 import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
@@ -18,23 +18,30 @@ import { contractAddress, TRANSFER_HASH } from './shared/constants';
 const useFetchTransfers = ({
   from,
   to,
+  library,
 }: {
   from: string;
   to: string;
+  library: Web3Provider | undefined;
 }): {
   transfers: Transfer[];
   error: unknown;
-  connectionError: Error | undefined;
   loading: boolean;
+  fetchTransfers: () => Promise<void>;
 } => {
-  const { library, error: connectionError } = useWeb3React<Web3Provider>();
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState();
+  const [error, setError] = useState<unknown>();
 
-  const fetchLogs = useCallback(async () => {
-    if (library) {
-      setLoading(true);
+  const fetchTransfers = useCallback(async () => {
+    if (!library) {
+      setLoading(false);
+      setTransfers([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
       const latest = await library.getBlockNumber();
       const { logs, blocks } = await fetchLogsWithBlocks({
         collectedLogs: [],
@@ -47,30 +54,40 @@ const useFetchTransfers = ({
         blocksRange: { toBlock: latest, fromBlock: latest - 30 },
       });
       const history = mapToTransferHistory(
-        logs, //.sort((a, b) => b.blockNumber - a.blockNumber),
+        logs.sort((a, b) => b.blockNumber - a.blockNumber),
         blocks,
         contractAddress,
         ABI
       );
       setTransfers(history);
-      setLoading(false);
+    } catch (e) {
+      console.error(e);
+      setError(e);
     }
+    setLoading(false);
   }, [from, library, to]);
 
   // fetch transfers on mount or on provider change
   useEffect(() => {
-    fetchLogs();
+    fetchTransfers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [library]);
 
-  return { transfers, error, connectionError, loading };
+  return { transfers, error, loading, fetchTransfers };
 };
 
 function App() {
+  const { library, error: connectionError } = useWeb3React<Web3Provider>();
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
+
   useEagerConnect();
-  const { transfers, connectionError, error } = useFetchTransfers({ from, to });
+  const { transfers, error, fetchTransfers } = useFetchTransfers({
+    from,
+    to,
+    library,
+  });
+
   if (connectionError) {
     console.error(connectionError);
     return <div>Failed to connect to Ethereum node.</div>;
@@ -88,30 +105,28 @@ function App() {
 
   return (
     <div>
-      <div className="flex align-center justify-start  w-full h-10">
-        <div className="inline-flex">
-          <label htmlFor="from">From</label>
-          <div className="inputWrapper">
-            <input
-              onChange={(e) => setFrom(e.target.value)}
-              name="from"
-              className="w-32 text-slate-200 border-black border-solid"
-              type={'text'}
-            />
-          </div>
-        </div>
-
-        <div className="inline-flex">
-          <label htmlFor="to">To</label>
-          <input
-            onChange={(e) => setTo(e.target.value)}
-            name="to"
-            className="w-32 border-black border-solid"
-            type={'text'}
-          />
-        </div>
+      <div className="wrapper m-auto mt-0 p-12 bg-indigo-200 rounded mb-8">
+        <label htmlFor="from">From</label>
+        <input
+          onChange={(e) => setFrom(e.target.value.trim())}
+          name="from"
+          className="w-full mt-2 mb-2 rounded pl-5 pr-5 pt-3 pb-3 inline-block"
+          type={'text'}
+        />
+        <label htmlFor="to">To</label>
+        <input
+          onChange={(e) => setTo(e.target.value.trim())}
+          name="to"
+          className="w-full mt-2 mb-2 rounded pl-5 pr-5 pt-3 pb-3 inline-block"
+          type={'text'}
+        />
+        <button
+          onClick={() => fetchTransfers()}
+          className="m-auto mt-0 w-full p-4 border-2 border-black border-sold"
+        >
+          Search
+        </button>
       </div>
-
       <div>
         {transfers ? <TranfersGrid data={transfers} /> : <h2>Loading...</h2>}
       </div>

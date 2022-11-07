@@ -2,7 +2,6 @@
   "name": "fractional",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "dependencies": {
     "@ethersproject/providers": "^5.7.2",
     "@tanstack/react-table": "^8.5.22",
