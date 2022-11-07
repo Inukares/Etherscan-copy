@@ -6,9 +6,7 @@ import { Log, Web3Provider } from '@ethersproject/providers';
 import { ethers } from 'ethers';
 import { BlocksMap } from '../../shared/types';
 
-export const mapTopicsToFilter = (
-  topics: Array<string | null>
-): Array<string | null> => {
+export const mapTopicsToFilter = (topics: Topics): Array<string | null> => {
   const [transfer_hash, from, to] = topics;
   const filter = [transfer_hash];
   if (typeof from === 'string' && from)
@@ -18,16 +16,62 @@ export const mapTopicsToFilter = (
   return filter;
 };
 
+type Topics = Array<string | null>;
+
 type FetchLogsParams = {
   provider: Web3Provider;
   contractAddress: string;
   minLogsCount: number;
   collectedLogs: Array<Log>;
   collectedBlocksMap: BlocksMap;
-  topics: Array<string | null>;
-  blocksRange: { fromBlock: number; toBlock: number };
+  topics: Topics;
+  blocksRange?: { fromBlock?: number; toBlock?: number };
   promiseQueue: PQueue<PriorityQueue, QueueAddOptions>;
 };
+
+type Filter = {
+  address: string;
+  topics: FetchLogsParams['topics'];
+  fromBlock?: number;
+  toBlock?: number;
+};
+
+const getSanitizedParams = ({
+  address,
+  topics,
+  blockRange,
+}: {
+  address: string;
+  topics: Topics;
+  blockRange?: {
+    fromBlock?: number;
+    toBlock?: number;
+  };
+}) => {
+  const filter: Filter = { address, topics };
+  let blockRangeCopy;
+  if (typeof blockRange === 'object') {
+    blockRangeCopy = { ...blockRange };
+  }
+  console.log(blockRangeCopy);
+
+  let fromBlock = blockRangeCopy?.fromBlock;
+  let toBlock = blockRangeCopy?.toBlock;
+  if (typeof toBlock === 'number') {
+    filter.toBlock = toBlock;
+  }
+
+  if (typeof fromBlock === 'number') {
+    if (fromBlock < 0) {
+      fromBlock = 0;
+    }
+    filter.fromBlock = fromBlock;
+  }
+  return { filter, fromBlock, toBlock };
+};
+
+const isNumber = (value: unknown): value is number =>
+  typeof value === 'number' && !Number.isNaN(value);
 
 /**
  * There's no way to know how many logs are there for specific filter
@@ -51,13 +95,19 @@ export const fetchLogsWithBlocks = async ({
   blocksRange,
   promiseQueue,
 }: FetchLogsParams): Promise<{ logs: Array<Log>; blocks: BlocksMap }> => {
-  let { fromBlock, toBlock } = blocksRange;
-  if (toBlock <= 0) {
+  const { fromBlock, toBlock, filter } = getSanitizedParams({
+    address: contractAddress,
+    topics,
+    blockRange: blocksRange,
+  });
+  console.log(filter);
+
+  // looped through all of the blocks up to genesis block
+  if (typeof toBlock === 'number' && toBlock <= 0) {
     return { logs: collectedLogs, blocks: collectedBlocksMap };
   }
-  if (fromBlock < 0) fromBlock = 0;
 
-  const filter = { address: contractAddress, fromBlock, toBlock, topics };
+  debugger;
   const logs = await provider.getLogs(filter);
   const uniqueBlocks = new Set<number>();
   for (let i = 0; i < logs.length; i++) {
@@ -79,12 +129,18 @@ export const fetchLogsWithBlocks = async ({
   // wait for all the blocks to be fetched
   await promiseQueue.onIdle();
 
+  // when there is no range provided it's not possible to determine iterating logic
+  // could be refactored to allow custom iteration logic
+  if (typeof fromBlock !== 'number' || typeof toBlock !== 'number') {
+    return { logs, blocks: blocksMap };
+  }
   const combinedLogs = [...collectedLogs, ...logs];
   const combinedBlocksMap = { ...blocksMap, ...collectedBlocksMap };
   // latter condition prevents infinite loop
   if (combinedLogs.length < minLogsCount && fromBlock !== toBlock) {
     // start iterating at the last element with the same range initially specified.
     // could be refactored to a custom function, for instance allowing exponentially growing range
+    debugger;
     const newBlocksRange = {
       toBlock: fromBlock,
       fromBlock: fromBlock - (toBlock - fromBlock),

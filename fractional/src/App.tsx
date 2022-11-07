@@ -15,78 +15,122 @@ import {
 import { BlocksMap, Transfer } from './shared/types';
 import { contractAddress, TRANSFER_HASH } from './shared/constants';
 
-const useFetchTransfers = ({
-  from,
-  to,
+type FetchTransfersParams = {
+  from?: string;
+  to?: string;
+  blocksRange?: { toBlock?: number; fromBlock?: number };
+  minLogsCount: number;
+};
+
+const useLazyFetchTransfers = ({
   library,
 }: {
-  from: string;
-  to: string;
   library: Web3Provider | undefined;
 }): {
   transfers: Transfer[];
   error: unknown;
   loading: boolean;
-  fetchTransfers: () => Promise<void>;
+  fetchTransfers: ({
+    from,
+    to,
+    blocksRange,
+    minLogsCount,
+  }: FetchTransfersParams) => Promise<void>;
 } => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>();
 
-  const fetchTransfers = useCallback(async () => {
-    if (!library) {
+  const fetchTransfers = useCallback(
+    async ({
+      from,
+      to,
+      blocksRange,
+      minLogsCount,
+    }: {
+      from?: string;
+      to?: string;
+      blocksRange?: { toBlock?: number; fromBlock?: number };
+      minLogsCount: number;
+    }) => {
+      if (!library) {
+        setLoading(false);
+        setTransfers([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        console.log('frmo inner func', blocksRange);
+        const { logs, blocks } = await fetchLogsWithBlocks({
+          collectedLogs: [],
+          collectedBlocksMap: {},
+          contractAddress,
+          minLogsCount,
+          provider: library,
+          promiseQueue: new PQueue({ interval: 1000, concurrency: 5 }),
+          topics: mapTopicsToFilter([TRANSFER_HASH, from ?? null, to ?? null]),
+          blocksRange, //{ toBlock: latest, fromBlock: latest - 30 },
+        });
+        console.log(logs, blocks);
+        const history = mapToTransferHistory(
+          logs.sort((a, b) => b.blockNumber - a.blockNumber),
+          blocks,
+          contractAddress,
+          ABI
+        );
+        setTransfers(history);
+      } catch (e) {
+        console.error(e);
+        setError(e);
+      }
       setLoading(false);
-      setTransfers([]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const latest = await library.getBlockNumber();
-      const { logs, blocks } = await fetchLogsWithBlocks({
-        collectedLogs: [],
-        collectedBlocksMap: {},
-        contractAddress,
-        minLogsCount: 20,
-        provider: library,
-        promiseQueue: new PQueue({ interval: 1000, concurrency: 5 }),
-        topics: mapTopicsToFilter([TRANSFER_HASH, from, to]),
-        blocksRange: { toBlock: latest, fromBlock: latest - 30 },
-      });
-      const history = mapToTransferHistory(
-        logs.sort((a, b) => b.blockNumber - a.blockNumber),
-        blocks,
-        contractAddress,
-        ABI
-      );
-      setTransfers(history);
-    } catch (e) {
-      console.error(e);
-      setError(e);
-    }
-    setLoading(false);
-  }, [from, library, to]);
-
-  // fetch transfers on mount or on provider change
-  useEffect(() => {
-    fetchTransfers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [library]);
+    },
+    [library]
+  );
 
   return { transfers, error, loading, fetchTransfers };
 };
 
+// TODO: Verify all error-prone paths.
+// TODO: Correct inconsitent namings for errors, block vs blocksRange, etc
+// TODO: if recipient or sender is set, set minLogsCount to 0 and blockRange to null
 function App() {
   const { library, error: connectionError } = useWeb3React<Web3Provider>();
   const [from, setFrom] = useState<string>('');
   const [to, setTo] = useState<string>('');
+  const [latestBlock, setLatestBlock] = useState<number>(0);
 
   useEagerConnect();
-  const { transfers, error, fetchTransfers } = useFetchTransfers({
-    from,
-    to,
+
+  const { transfers, error, fetchTransfers } = useLazyFetchTransfers({
     library,
   });
+  // console.log(transfers);
+
+  // run only on mount or library change
+  useEffect(() => {
+    if (!library) return;
+
+    const fetchTransfersInitially = async () => {
+      try {
+        const latest = await library.getBlockNumber();
+        await fetchTransfers({
+          minLogsCount: 10,
+          blocksRange: {
+            toBlock: latest,
+            fromBlock: latest - 30,
+            // TODO: add to and from
+          },
+        });
+        setLatestBlock(latest);
+      } catch (err) {
+        console.error('Failed to fetch trnasfers!', err);
+      }
+    };
+
+    fetchTransfersInitially();
+  }, [fetchTransfers, latestBlock, library]);
 
   if (connectionError) {
     console.error(connectionError);
@@ -121,7 +165,15 @@ function App() {
           type={'text'}
         />
         <button
-          onClick={() => fetchTransfers()}
+          onClick={async () =>
+            await fetchTransfers({
+              minLogsCount: 10,
+              blocksRange: {
+                fromBlock: latestBlock,
+                toBlock: latestBlock - 30,
+              },
+            })
+          }
           className="m-auto mt-0 w-full p-4 border-2 border-black border-sold"
         >
           Search

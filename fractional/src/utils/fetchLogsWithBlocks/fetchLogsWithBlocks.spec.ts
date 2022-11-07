@@ -148,6 +148,8 @@ describe(fetchLogsWithBlocks, () => {
     expect(logs).toEqual(expectedLogs);
     expect(blocks).toEqual(expectedBlocks);
   });
+  it.skip('Should return collected logs and blocks when toBlock is equal to 0', () => {});
+  it.skip('Should return after first call when toBlock ot fromBlock or both are nullish', () => {});
   it.skip('shows error message when throws', async () => {
     const PQueue = getMockPQueue();
     let provider: Provider = {};
