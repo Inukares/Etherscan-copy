@@ -72,7 +72,6 @@ export const fetchLogsWithBlocks = async ({
   // wait for all the blocks to be fetched
   await promiseQueue.onIdle();
 
-  debugger;
   // when there is no range provided it's not possible to determine iterating logic
   // could be refactored to allow custom iteration logic
   if (!isNumber(fromBlock) || !isNumber(toBlock)) {
@@ -80,12 +79,10 @@ export const fetchLogsWithBlocks = async ({
   }
   const combinedLogs = [...collectedLogs, ...logs];
   const combinedBlocksMap = { ...blocksMap, ...collectedBlocksMap };
-  debugger;
   // latter condition prevents infinite loop
   if (combinedLogs.length < minLogsCount && fromBlock !== toBlock) {
     // start iterating at the last element with the same range initially specified.
     // could be refactored to a custom function, for instance allowing exponentially growing range
-    debugger;
     const newBlocksRange = {
       toBlock: fromBlock,
       fromBlock: fromBlock - (toBlock - fromBlock),

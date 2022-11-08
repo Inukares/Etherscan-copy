@@ -4,8 +4,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import './App.css';
 import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
-import { TranfersGrid } from './features/TransfersGrid';
 import { useLazyFetchTransfers } from './hooks/useLazyFetchTransfers';
+import { Table } from './features/Table';
+import { Column } from 'react-table';
+import { getTimeElapsed } from './utils/getTimeElapsed';
+import { CoreRow, Row } from '@tanstack/react-table';
+import { Transfer } from './shared/types';
 
 // TODO: Verify all error-prone paths.
 // TODO: Correct inconsitent namings for errors, block vs blocksRange, etc
@@ -47,6 +51,30 @@ function App() {
     fetchTransfersInitially();
   }, [fetchTransfers, latestBlock, library]);
 
+  const columns: Column[] = React.useMemo(
+    () => [
+      {
+        Header: 'From',
+        accessor: 'from',
+        disableSortBy: true,
+      },
+      {
+        Header: 'To',
+        accessor: 'to',
+        disableSortBy: true,
+      },
+      {
+        Header: 'Timestamp',
+        accessor: 'timestamp',
+        Cell: ({ value }) => (
+          <span>{value !== null ? getTimeElapsed(value * 1000) : ' -'}</span>
+        ),
+      },
+      { Header: 'Value', accessor: 'value' },
+    ],
+    []
+  );
+
   if (connectionError) {
     console.error(connectionError);
     return <div>Failed to connect to Ethereum node.</div>;
@@ -61,6 +89,15 @@ function App() {
       </div>
     );
   }
+
+  const ETHERSCAN_TX_URL = 'https://etherscan.io/tx/';
+
+  const forwardToEtherscan = (row: unknown) => {
+    // TODO: fix to make Table types more flexible
+    const txHash = (row as Row<Transfer>).original.txHash;
+
+    return window.open(ETHERSCAN_TX_URL + txHash, '_blank');
+  };
 
   return (
     <div>
@@ -95,7 +132,15 @@ function App() {
         </button>
       </div>
       <div>
-        {transfers ? <TranfersGrid data={transfers} /> : <h2>Loading...</h2>}
+        {transfers ? (
+          <Table
+            onRowClick={forwardToEtherscan}
+            columns={columns}
+            data={transfers}
+          />
+        ) : (
+          <h2>Loading...</h2>
+        )}
       </div>
     </div>
   );

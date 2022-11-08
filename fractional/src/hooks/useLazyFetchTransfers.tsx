@@ -67,7 +67,7 @@ export const useLazyFetchTransfers = ({
         });
         console.log(logs, blocks);
         const history = mapToTransferHistory(
-          logs.sort((a, b) => b.blockNumber - a.blockNumber),
+          logs, //.sort((a, b) => b.blockNumber - a.blockNumber),
           blocks,
           contractAddress,
           ABI
