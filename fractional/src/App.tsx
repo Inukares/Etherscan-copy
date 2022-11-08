@@ -4,14 +4,18 @@ import React, { useEffect, useState, useCallback } from 'react';
 import './App.css';
 import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
-import { useLazyFetchTransfers } from './hooks/useLazyFetchTransfers';
+import {
+  FetchTransfers,
+  useLazyFetchTransfers,
+} from './hooks/useLazyFetchTransfers';
 import { TransfersTable } from './features/TransfersTable';
-import { Column } from 'react-table';
-import { getTimeElapsed } from './utils/getTimeElapsed';
-import { CoreRow, Row } from '@tanstack/react-table';
-import { Transfer } from './shared/types';
+import { getBlockRange } from './utils/getBlockRange';
+import { MIN_LOGS } from './shared/constants';
+import { Search } from './features/Search';
 
-// TODO: Verify all error-prone paths.
+// 0x60594a405d53811d3BC4766596EFD80fd545A270
+
+// TODO: Default sorting for table, listetningto new blocks
 // TODO: Correct inconsitent namings for errors, block vs blocksRange, etc
 // TODO: if recipient or sender is set, set minLogsCount to 0 and blockRange to null
 function App() {
@@ -21,35 +25,35 @@ function App() {
   const [latestBlock, setLatestBlock] = useState<number>(0);
 
   useEagerConnect();
-
   const { transfers, error, fetchTransfers } = useLazyFetchTransfers({
     library,
   });
-  // console.log(transfers);
 
-  // run only on mount or library change
   useEffect(() => {
     if (!library) return;
 
     const fetchTransfersInitially = async () => {
+      // needs to be wrapped in try catch as it initializes fetching latest block
       try {
         const latest = await library.getBlockNumber();
         await fetchTransfers({
-          minLogsCount: 10,
+          minLogsCount: MIN_LOGS,
           blocksRange: {
             toBlock: latest,
-            fromBlock: latest - 30,
-            // TODO: add to and from
+            fromBlock: getBlockRange(latest),
           },
+          to,
+          from,
         });
         setLatestBlock(latest);
       } catch (err) {
         console.error('Failed to fetch trnasfers!', err);
       }
     };
-
     fetchTransfersInitially();
-  }, [fetchTransfers, latestBlock, library]);
+    // run only on mount or library change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchTransfers, library]);
 
   if (connectionError) {
     console.error(connectionError);
@@ -61,7 +65,7 @@ function App() {
     return (
       <div>
         There was an error while fetching data. Please see the console for more
-        details
+        details.
       </div>
     );
   }
@@ -85,20 +89,12 @@ function App() {
           className="w-full mt-2 mb-2 rounded pl-5 pr-5 pt-3 pb-3 inline-block"
           type={'text'}
         />
-        <button
-          onClick={async () =>
-            await fetchTransfers({
-              minLogsCount: 10,
-              blocksRange: {
-                fromBlock: latestBlock,
-                toBlock: latestBlock - 30,
-              },
-            })
-          }
-          className="m-auto mt-0 w-full p-4 border-2 border-black border-sold"
-        >
-          Search
-        </button>
+        <Search
+          fetchTransfers={fetchTransfers}
+          from={from}
+          latestBlock={latestBlock}
+          to={to}
+        />
       </div>
       <div>
         {transfers ? <TransfersTable data={transfers} /> : <h2>Loading...</h2>}

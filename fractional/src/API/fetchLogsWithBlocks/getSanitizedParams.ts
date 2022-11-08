@@ -19,7 +19,6 @@ export const getSanitizedParams = ({
   if (typeof blockRange === 'object') {
     blockRangeCopy = { ...blockRange };
   }
-  console.log(blockRangeCopy);
 
   let fromBlock = blockRangeCopy?.fromBlock;
   let toBlock = blockRangeCopy?.toBlock;

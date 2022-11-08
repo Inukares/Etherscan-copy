@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Column, Row } from 'react-table';
 import { ETHERSCAN_TX_URL } from '../shared/constants';
 import { Table } from '../shared/Table';
@@ -30,6 +30,13 @@ export const TransfersTable = ({ data }: { data: Transfer[] }) => {
     []
   );
 
+  const initialState = useMemo(
+    () => ({
+      sortBy: [{ id: 'timestamp', desc: true }],
+    }),
+    []
+  );
+
   const forwardToEtherscan = (row: unknown) => {
     // TODO: fix to make Table types more flexible
     const txHash = (row as Row<Transfer>).original.txHash;
@@ -38,6 +45,11 @@ export const TransfersTable = ({ data }: { data: Transfer[] }) => {
   };
 
   return (
-    <Table onRowClick={forwardToEtherscan} columns={columns} data={data} />
+    <Table
+      onRowClick={forwardToEtherscan}
+      initialState={initialState}
+      columns={columns}
+      data={data}
+    />
   );
 };

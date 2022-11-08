@@ -1,5 +1,6 @@
 import React from 'react';
-import { useTable, useSortBy, Column, Row } from 'react-table';
+import { useTable, useSortBy, Column, Row, TableState } from 'react-table';
+import { TRANSFERS_TO_SHOW } from './constants';
 import { Transfer } from './types';
 
 // TODO: Table should be mased as reusable component. Atm it includes built-in classNames, but I avoided it in order to save time on implementation
@@ -8,10 +9,13 @@ import { Transfer } from './types';
 export function Table({
   columns,
   data,
+  initialState,
   onRowClick = () => null,
 }: {
   columns: Column[];
   data: Array<Transfer>;
+  // react-table v7 has poor typescript support. Many types are simply incorrect :(
+  initialState?: any;
   // TODO: improve types to be flexible, not hardcoded
   onRowClick?: (row: Row<object>) => Window | null;
 }) {
@@ -20,13 +24,13 @@ export function Table({
       {
         columns,
         data,
+        initialState,
       },
       useSortBy
     );
 
-  // We don't want to render all 2000 rows for this example, so cap
-  // it at 20 for this use case
-  const firstPageRows = rows.slice(0, 20);
+  // showing only some rows
+  const firstPageRows = rows.slice(0, TRANSFERS_TO_SHOW);
 
   return (
     <div className="w-full overflow-x-auto">
@@ -81,7 +85,11 @@ export function Table({
         </tbody>
       </table>
       <br />
-      <div>Showing the first 20 results of {rows.length} rows</div>
+      <div>
+        Showing the first{' '}
+        {TRANSFERS_TO_SHOW < rows.length ? TRANSFERS_TO_SHOW : rows.length}{' '}
+        results of {rows.length} rows
+      </div>
     </div>
   );
 }

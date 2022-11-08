@@ -11,7 +11,7 @@ import { getSanitizedParams } from './getSanitizedParams';
 export type FetchLogsParams = {
   provider: Web3Provider;
   contractAddress: string;
-  minLogsCount: number;
+  minLogsCount?: number;
   collectedLogs: Array<Log>;
   collectedBlocksMap: BlocksMap;
   topics: Topics;
@@ -68,9 +68,9 @@ export const fetchLogsWithBlocks = async ({
       }
     });
   }
-  console.log(blocksMap);
   // wait for all the blocks to be fetched
   await promiseQueue.onIdle();
+  console.log(blocksMap);
 
   // when there is no range provided it's not possible to determine iterating logic
   // could be refactored to allow custom iteration logic
@@ -80,7 +80,7 @@ export const fetchLogsWithBlocks = async ({
   const combinedLogs = [...collectedLogs, ...logs];
   const combinedBlocksMap = { ...blocksMap, ...collectedBlocksMap };
   // latter condition prevents infinite loop
-  if (combinedLogs.length < minLogsCount && fromBlock !== toBlock) {
+  if (combinedLogs.length < (minLogsCount ?? 0) && fromBlock !== toBlock) {
     // start iterating at the last element with the same range initially specified.
     // could be refactored to a custom function, for instance allowing exponentially growing range
     const newBlocksRange = {

@@ -8,12 +8,17 @@ import { fetchLogsWithBlocks } from '../API/fetchLogsWithBlocks/fetchLogsWithBlo
 import { mapToTransferHistory } from '../utils/mapToTransferHistory/mapToTransferHistory';
 import { mapTopicsToFilter } from '../utils/mapTopicsToFilter';
 
-export type FetchTransfersParams = {
+export type FetchTransfers = ({
+  from,
+  to,
+  blocksRange,
+  minLogsCount,
+}: {
   from?: string;
   to?: string;
   blocksRange?: { toBlock?: number; fromBlock?: number };
-  minLogsCount: number;
-};
+  minLogsCount?: number;
+}) => Promise<void>;
 
 export const useLazyFetchTransfers = ({
   library,
@@ -23,12 +28,7 @@ export const useLazyFetchTransfers = ({
   transfers: Transfer[];
   error: unknown;
   loading: boolean;
-  fetchTransfers: ({
-    from,
-    to,
-    blocksRange,
-    minLogsCount,
-  }: FetchTransfersParams) => Promise<void>;
+  fetchTransfers: FetchTransfers;
 } => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,17 +44,15 @@ export const useLazyFetchTransfers = ({
       from?: string;
       to?: string;
       blocksRange?: { toBlock?: number; fromBlock?: number };
-      minLogsCount: number;
+      minLogsCount?: number;
     }): Promise<void> => {
       if (!library) {
         setLoading(false);
         setTransfers([]);
         return;
       }
-
       setLoading(true);
       try {
-        console.log('frmo inner func', blocksRange);
         const { logs, blocks } = await fetchLogsWithBlocks({
           collectedLogs: [],
           collectedBlocksMap: {},
@@ -63,7 +61,7 @@ export const useLazyFetchTransfers = ({
           provider: library,
           promiseQueue: new PQueue({ interval: 1000, concurrency: 5 }),
           topics: mapTopicsToFilter([TRANSFER_HASH, from ?? null, to ?? null]),
-          blocksRange, //{ toBlock: latest, fromBlock: latest - 30 },
+          blocksRange,
         });
         console.log(logs, blocks);
         const history = mapToTransferHistory(
