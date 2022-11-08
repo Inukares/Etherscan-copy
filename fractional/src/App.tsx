@@ -5,7 +5,7 @@ import './App.css';
 import { useEagerConnect } from './hooks/useEagerConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
 import { useLazyFetchTransfers } from './hooks/useLazyFetchTransfers';
-import { Table } from './features/Table';
+import { TransfersTable } from './features/TransfersTable';
 import { Column } from 'react-table';
 import { getTimeElapsed } from './utils/getTimeElapsed';
 import { CoreRow, Row } from '@tanstack/react-table';
@@ -51,30 +51,6 @@ function App() {
     fetchTransfersInitially();
   }, [fetchTransfers, latestBlock, library]);
 
-  const columns: Column[] = React.useMemo(
-    () => [
-      {
-        Header: 'From',
-        accessor: 'from',
-        disableSortBy: true,
-      },
-      {
-        Header: 'To',
-        accessor: 'to',
-        disableSortBy: true,
-      },
-      {
-        Header: 'Timestamp',
-        accessor: 'timestamp',
-        Cell: ({ value }) => (
-          <span>{value !== null ? getTimeElapsed(value * 1000) : ' -'}</span>
-        ),
-      },
-      { Header: 'Value', accessor: 'value' },
-    ],
-    []
-  );
-
   if (connectionError) {
     console.error(connectionError);
     return <div>Failed to connect to Ethereum node.</div>;
@@ -90,15 +66,6 @@ function App() {
     );
   }
 
-  const ETHERSCAN_TX_URL = 'https://etherscan.io/tx/';
-
-  const forwardToEtherscan = (row: unknown) => {
-    // TODO: fix to make Table types more flexible
-    const txHash = (row as Row<Transfer>).original.txHash;
-
-    return window.open(ETHERSCAN_TX_URL + txHash, '_blank');
-  };
-
   return (
     <div>
       <div className="wrapper m-auto mt-0 p-12 bg-indigo-200 rounded mb-8">
@@ -106,6 +73,7 @@ function App() {
         <input
           onChange={(e) => setFrom(e.target.value.trim())}
           name="from"
+          id="from"
           className="w-full mt-2 mb-2 rounded pl-5 pr-5 pt-3 pb-3 inline-block"
           type={'text'}
         />
@@ -113,6 +81,7 @@ function App() {
         <input
           onChange={(e) => setTo(e.target.value.trim())}
           name="to"
+          id="to"
           className="w-full mt-2 mb-2 rounded pl-5 pr-5 pt-3 pb-3 inline-block"
           type={'text'}
         />
@@ -132,15 +101,7 @@ function App() {
         </button>
       </div>
       <div>
-        {transfers ? (
-          <Table
-            onRowClick={forwardToEtherscan}
-            columns={columns}
-            data={transfers}
-          />
-        ) : (
-          <h2>Loading...</h2>
-        )}
+        {transfers ? <TransfersTable data={transfers} /> : <h2>Loading...</h2>}
       </div>
     </div>
   );

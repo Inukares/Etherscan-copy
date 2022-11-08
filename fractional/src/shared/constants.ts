@@ -7,3 +7,5 @@ export const TRANSFER_HASH: string = ethers.utils.keccak256(
 );
 
 export const contractAddress = '0x6b175474e89094c44da98b954eedeac495271d0f';
+
+export const ETHERSCAN_TX_URL = 'https://etherscan.io/tx/';
