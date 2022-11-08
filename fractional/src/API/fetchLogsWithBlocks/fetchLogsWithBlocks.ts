@@ -44,14 +44,12 @@ export const fetchLogsWithBlocks = async ({
     topics,
     blockRange: blocksRange,
   });
-  console.log(filter);
 
   // looped through all of the blocks up to genesis block
   if (isNumber(toBlock) && toBlock <= 0) {
     return { logs: collectedLogs, blocks: collectedBlocksMap };
   }
 
-  debugger;
   const logs = await provider.getLogs(filter);
   const uniqueBlocks = new Set<number>();
   for (let i = 0; i < logs.length; i++) {
@@ -70,16 +68,19 @@ export const fetchLogsWithBlocks = async ({
       }
     });
   }
+  console.log(blocksMap);
   // wait for all the blocks to be fetched
   await promiseQueue.onIdle();
 
+  debugger;
   // when there is no range provided it's not possible to determine iterating logic
   // could be refactored to allow custom iteration logic
-  if (isNumber(fromBlock) || isNumber(toBlock)) {
+  if (!isNumber(fromBlock) || !isNumber(toBlock)) {
     return { logs, blocks: blocksMap };
   }
   const combinedLogs = [...collectedLogs, ...logs];
   const combinedBlocksMap = { ...blocksMap, ...collectedBlocksMap };
+  debugger;
   // latter condition prevents infinite loop
   if (combinedLogs.length < minLogsCount && fromBlock !== toBlock) {
     // start iterating at the last element with the same range initially specified.

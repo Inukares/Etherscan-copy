@@ -68,7 +68,7 @@ describe(fetchLogsWithBlocks, () => {
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
     const { logs, blocks } = await fetchLogsWithBlocks({
-      blocksRange: { fromBlock: 995, toBlock: 1000 },
+      blocksRange: { fromBlock: 900, toBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
       collectedBlocksMap: {},
@@ -148,8 +148,58 @@ describe(fetchLogsWithBlocks, () => {
     expect(logs).toEqual(expectedLogs);
     expect(blocks).toEqual(expectedBlocks);
   });
-  it.skip('Should return collected logs and blocks when toBlock is equal to 0', () => {});
-  it.skip('Should return after first call when toBlock ot fromBlock or both are nullish', () => {});
+  it('Should return after first call when toBlock ot fromBlock or both are nullish', async () => {
+    const PQueue = getMockPQueue();
+    let provider: Provider = {};
+    const { logs: expectedLogs, blocks: expectedBlocks } =
+      fetchLogsMockResponse;
+    const getLogsMock = jest.fn(
+      ({ address, fromBlock, toBlock, topics }) =>
+        new Promise((resolve) => {
+          resolve(expectedLogs);
+        })
+    );
+    const getBlockMock = jest.fn(
+      (number) =>
+        new Promise(async (resolve) => {
+          resolve(expectedBlocks['15867800']);
+        })
+    );
+    provider.getLogs = getLogsMock;
+    provider.getBlock = getBlockMock;
+    let response = await fetchLogsWithBlocks({
+      blocksRange: { toBlock: 1000 },
+      provider: provider as any,
+      contractAddress: '0x',
+      promiseQueue: PQueue as any,
+      collectedBlocksMap: {},
+      collectedLogs: [],
+      minLogsCount: Infinity,
+      topics: [],
+    });
+    expect(response.blocks).toEqual(expectedBlocks);
+    expect(response.logs).toEqual(expectedLogs);
+    expect(getLogsMock).toHaveBeenCalledTimes(1);
+    expect(getBlockMock).toHaveBeenCalledTimes(1);
+    getLogsMock.mockClear();
+    getBlockMock.mockClear();
+
+    response = await fetchLogsWithBlocks({
+      blocksRange: { fromBlock: 1000 },
+      provider: provider as any,
+      contractAddress: '0x',
+      promiseQueue: PQueue as any,
+      collectedBlocksMap: {},
+      collectedLogs: [],
+      minLogsCount: Infinity,
+      topics: [],
+    });
+
+    expect(response.blocks).toEqual(expectedBlocks);
+    expect(response.logs).toEqual(expectedLogs);
+    expect(getLogsMock).toHaveBeenCalledTimes(1);
+    expect(getBlockMock).toHaveBeenCalledTimes(1);
+  });
   it.skip('shows error message when throws', async () => {
     const PQueue = getMockPQueue();
     let provider: Provider = {};
