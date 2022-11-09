@@ -1,6 +1,6 @@
 import { Filter } from '@ethersproject/providers';
-import { Topics } from '../../shared/types';
-import { isNumber } from '../../utils/isNumber';
+import { Topics } from '../shared/types';
+import { isNumber } from './isNumber';
 
 export const getSanitizedParams = ({
   address,
