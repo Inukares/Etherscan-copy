@@ -1,7 +1,7 @@
 import { fetchLogsMockResponse } from '../../shared/data/mocks';
-import { recursiveFetchLogsWithBlocks } from './fetchLogsWithBlocks';
 import { mockLogs } from '../../shared/data/mocks';
 import { BlocksMap } from '../../shared/types';
+import { recursiveFetchLogsWithBlocks } from './recursiveFetchLogsWithBlocks';
 
 type Provider = Record<string, any>;
 
@@ -37,7 +37,7 @@ describe(recursiveFetchLogsWithBlocks, () => {
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
     const { logs, blocks } = await recursiveFetchLogsWithBlocks({
-      blocksRange: { fromBlock: 999, toBlock: 1000 },
+      blockRange: { fromBlock: 999, toBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
       promiseQueue: PQueue as any,
@@ -60,7 +60,7 @@ describe(recursiveFetchLogsWithBlocks, () => {
         })
     );
     const getBlockMock = jest.fn(
-      (number) =>
+      () =>
         new Promise((resolve) => {
           resolve(expectedBlocks['15867800']);
         })
@@ -68,7 +68,7 @@ describe(recursiveFetchLogsWithBlocks, () => {
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
     const { logs, blocks } = await recursiveFetchLogsWithBlocks({
-      blocksRange: { fromBlock: 900, toBlock: 1000 },
+      blockRange: { fromBlock: 900, toBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
       collectedBlocksMap: {},
@@ -81,7 +81,6 @@ describe(recursiveFetchLogsWithBlocks, () => {
     expect(logs).toEqual(expectedLogs);
     expect(blocks).toEqual(expectedBlocks);
   });
-  // TODO: implement custom block range iterartor func
   it('prevents infinite loop when from and to blocks are the same', async () => {
     const PQueue = getMockPQueue();
 
@@ -103,7 +102,7 @@ describe(recursiveFetchLogsWithBlocks, () => {
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
     const { logs, blocks } = await recursiveFetchLogsWithBlocks({
-      blocksRange: { fromBlock: 1000, toBlock: 1000 },
+      blockRange: { fromBlock: 1000, toBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
       collectedBlocksMap: {},
@@ -136,7 +135,7 @@ describe(recursiveFetchLogsWithBlocks, () => {
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
     const { logs, blocks } = await recursiveFetchLogsWithBlocks({
-      blocksRange: { fromBlock: 0, toBlock: 1 },
+      blockRange: { fromBlock: 0, toBlock: 1 },
       provider: provider as any,
       contractAddress: '0x',
       collectedBlocksMap: {},
@@ -168,7 +167,7 @@ describe(recursiveFetchLogsWithBlocks, () => {
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
     let response = await recursiveFetchLogsWithBlocks({
-      blocksRange: { toBlock: 1000 },
+      blockRange: { toBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
       promiseQueue: PQueue as any,
@@ -185,7 +184,7 @@ describe(recursiveFetchLogsWithBlocks, () => {
     getBlockMock.mockClear();
 
     response = await recursiveFetchLogsWithBlocks({
-      blocksRange: { fromBlock: 1000 },
+      blockRange: { fromBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
       promiseQueue: PQueue as any,
@@ -220,7 +219,7 @@ describe(recursiveFetchLogsWithBlocks, () => {
     provider.getBlock = getBlockMock;
     expect(() =>
       recursiveFetchLogsWithBlocks({
-        blocksRange: { fromBlock: 1000, toBlock: 1000 },
+        blockRange: { fromBlock: 1000, toBlock: 1000 },
         // @ts-ignore-next-line
         provider,
         contractAddress: '0x',

@@ -1,7 +1,6 @@
 import { Web3Provider } from '@ethersproject/providers';
 import { useWeb3React } from '@web3-react/core';
 import { useEffect, useState } from 'react';
-import './App.css';
 import { useConnect } from './hooks/useConnect';
 import { useLazyFetchTransfers } from './hooks/useLazyFetchTransfers/useLazyFetchTransfers';
 import { TransfersTable } from './features/TransfersTable';
@@ -11,9 +10,6 @@ import { Search } from './features/Search';
 import { Spinner } from './shared/components/Spinner';
 import { DisplayError } from './shared/components/DisplayError';
 
-// 0x60594a405d53811d3BC4766596EFD80fd545A270
-
-// TODO: Correct inconsitent namings for errors, block vs blocksRange, etc
 function App() {
   const { library, error: connectionError } = useWeb3React<Web3Provider>();
   const [from, setFrom] = useState<string>('');
@@ -35,7 +31,7 @@ function App() {
         const latest = await library.getBlockNumber();
         await recursiveFetchTransfers({
           minLogsCount: MIN_LOGS,
-          blocksRange: {
+          blockRange: {
             toBlock: latest,
             fromBlock: getBlockRange(latest),
           },
@@ -55,7 +51,7 @@ function App() {
       library.on('block', async (block) => {
         setLatestBlock(() => block);
         await fetchTransfers({
-          blocksRange: { fromBlock: block, toBlock: block },
+          blockRange: { fromBlock: block, toBlock: block },
           from,
           to,
         });
@@ -74,7 +70,6 @@ function App() {
     console.error(connectionError);
     return <div>Failed to connect to Ethereum node.</div>;
   }
-  debugger;
 
   return (
     <div>

@@ -1,8 +1,46 @@
-# Getting Started with Create React App
+## Problem
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+In order to display timestamp, from, to, address and value you have to get logs and blocks corresponding to those logs, as RPC connector doesn't include timestamp in logs details.
 
-## Available Scripts
+The real difficulty lies provider.getLogs function that returns unknown before request number of logs.
+Possible scenarios are:
+a) Too many logs ( throwing when response contains more than 10000 logs)
+b) no logs at all
+c) 0 < xLogs < 10000 (cap at which infura throws error response)
+
+In order to solve this problem, one could:
+1) Fetch latest block and tied to it transaction logs. If logs collected is less than desired, repeat the process starting from next block
+2) Fetch logs from range of blocks. Iterate over those and fetch corresponding blocks. If logs collected is less than desired, repeat the process starting from next range.
+
+
+## High level decisions
+As 2) is much faster I chose to go this path. In fact, it is so fast that I had to artificially slow it with [Promise Queue](https://www.npmjs.com/package/p-queue) that helps avoiding getting rate limited.
+
+I chose to simply show error when user loads more than 10000 logs and still allow user to search for transfers as it seemed user-friendly. Fetching functions could be easily customized to include custom pagination, so that different use cases would be covred.
+
+I used `useLazyFetchTransfers` hook to take care of all the data handling, react-table-v7 for handling the sorting (as I wanted to save on time by implementing it by hand) and tailwind for the styling.
+
+
+## Packages used
+- tailwind for styling
+- web3-react for useful hooks
+- ethers for getting the blockchain data
+- react-table-v7 for table sorting logic
+- p-queue for avoiding getting rate limited
+- jest for the unit tests
+## Reflections about testing
+
+In a real-world application I'd include tests for all the small utility functions. I'd also add E2E & component tests to get better confidence in each iteration.
+I stumbled on issue with component tests while importing p-queue and I couldn't resolve it in a timely-fashion. I decided to focus on testing data-fetching.
+Have I had more time to invest I would have added E2E and component test with Playwright. Here's an example of how I used it in a different assignment: [https://github.com/Inukares/Stakefish](https://github.com/Inukares/Stakefish)
+
+## Thank you
+Thank you for the opportunity to take part in this challenge and get to know ethereum blockchain more. I'm looking forward to hearing your feedback!
+
+All the best,
+Piotr
+
+
 
 In the project directory, you can run:
 
@@ -19,28 +57,6 @@ You will also see any lint errors in the console.
 Launches the test runner in the interactive watch mode.\
 See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-### `npm run build`
+### `npm run test:debug`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+Launches test runner in debug mode

@@ -4,14 +4,12 @@ import { useState, useCallback } from 'react';
 import ABI from '../../shared/data/DAIABI.json';
 import { contractAddress, TRANSFER_HASH } from '../../shared/constants';
 import { Transfer } from '../../shared/types';
-import {
-  fetchLogsWithBlocks,
-  recursiveFetchLogsWithBlocks,
-} from '../../API/fetchLogsWithBlocks/fetchLogsWithBlocks';
+import { fetchLogsWithBlocks } from '../../API/fetchLogsWithBlocks/fetchLogsWithBlocks';
 import { mapToTransferHistory } from '../../utils/mapToTransferHistory/mapToTransferHistory';
 import { mapTopicsToFilter } from '../../utils/mapTopicsToFilter';
 import { getSanitizedParams } from '../../utils/getSanitizedParams';
 import { FetchTransfers, RecursiveFetchTransfers } from './types';
+import { recursiveFetchLogsWithBlocks } from '../../API/fetchLogsWithBlocks/recursiveFetchLogsWithBlocks';
 
 export const useLazyFetchTransfers = ({
   library,
@@ -35,11 +33,11 @@ export const useLazyFetchTransfers = ({
     async ({
       from,
       to,
-      blocksRange,
+      blockRange,
     }: {
       from?: string;
       to?: string;
-      blocksRange?: { toBlock?: number; fromBlock?: number };
+      blockRange?: { toBlock?: number; fromBlock?: number };
     }): Promise<void> => {
       setError(null);
       setLoading(true);
@@ -51,7 +49,7 @@ export const useLazyFetchTransfers = ({
         const { filter } = getSanitizedParams({
           address: contractAddress,
           topics,
-          blockRange: blocksRange,
+          blockRange,
         });
         const { logs, blocksMap: blocks } = await fetchLogsWithBlocks({
           filter,
@@ -70,6 +68,7 @@ export const useLazyFetchTransfers = ({
           setTransfers((transfers) => [...history, ...transfers]);
         }
       } catch (error) {
+        setError(error);
         console.log(error);
       }
       setLoading(false);
@@ -82,12 +81,12 @@ export const useLazyFetchTransfers = ({
     async ({
       from,
       to,
-      blocksRange,
+      blockRange,
       minLogsCount,
     }: {
       from?: string;
       to?: string;
-      blocksRange?: { toBlock?: number; fromBlock?: number };
+      blockRange?: { toBlock?: number; fromBlock?: number };
       minLogsCount?: number;
     }): Promise<void> => {
       setError(null);
@@ -104,7 +103,7 @@ export const useLazyFetchTransfers = ({
           provider: library,
           promiseQueue: promiseQueue,
           topics: mapTopicsToFilter([TRANSFER_HASH, from, to]),
-          blocksRange,
+          blockRange,
         });
         const history = mapToTransferHistory(
           logs,
@@ -116,6 +115,7 @@ export const useLazyFetchTransfers = ({
       } catch (e) {
         console.error(e);
         setError(e);
+        setTransfers(() => []);
       }
       setLoading(false);
     },

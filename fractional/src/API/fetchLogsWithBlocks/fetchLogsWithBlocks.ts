@@ -1,12 +1,9 @@
 import PQueue from 'p-queue';
 import { QueueAddOptions } from 'p-queue';
 import PriorityQueue from 'p-queue/dist/priority-queue';
-import { TRANSFER_HASH } from '../../shared/constants';
 import { Log, Web3Provider } from '@ethersproject/providers';
 import { ethers } from 'ethers';
 import { BlocksMap, Topics } from '../../shared/types';
-import { isNumber } from '../../utils/isNumber';
-import { getSanitizedParams } from '../../utils/getSanitizedParams';
 
 export type FetchLogsParams = {
   provider: Web3Provider;
@@ -15,7 +12,7 @@ export type FetchLogsParams = {
   collectedLogs: Array<Log>;
   collectedBlocksMap: BlocksMap;
   topics: Topics;
-  blocksRange?: { fromBlock?: number; toBlock?: number };
+  blockRange?: { fromBlock?: number; toBlock?: number };
   promiseQueue: PQueue<PriorityQueue, QueueAddOptions>;
 };
 
@@ -24,12 +21,11 @@ export type FetchLogsParams = {
  * That enforces implementing pagination of some sort in order to get desired amount of logs.
  * Possible options are:
  * 1) Get block one by one and fetch logs up until minimum amount of logs is collected
- * 2) Get logs from a range of blocks and if response doesn't containt min amount, recurisvely fetch logs but this time starting at the end of last iteration.
+ * 2) Get logs from a range of blocks and if response doesn't containt min amount, recurisvely fetch more logs, but this time starting at the end of last iteration.
  *
  * Below function favors 2nd approach as it is much faster and can easily incorporate additional logic for iterations and failures. Actual implementation should
- * boil down to desired UX.
+ * be based on desired UX.
  * */
-
 export const fetchLogsWithBlocks = async ({
   provider,
   promiseQueue,
@@ -61,63 +57,4 @@ export const fetchLogsWithBlocks = async ({
   await promiseQueue.onIdle();
 
   return { logs, blocksMap };
-};
-
-export const recursiveFetchLogsWithBlocks = async ({
-  provider,
-  contractAddress,
-  minLogsCount,
-  collectedLogs,
-  collectedBlocksMap,
-  topics = [TRANSFER_HASH, null, null],
-  blocksRange,
-  promiseQueue,
-}: FetchLogsParams): Promise<{ logs: Array<Log>; blocks: BlocksMap }> => {
-  const { fromBlock, toBlock, filter } = getSanitizedParams({
-    address: contractAddress,
-    topics,
-    blockRange: blocksRange,
-  });
-  console.log(filter);
-
-  // looped through all of the blocks up to genesis block
-  if (isNumber(toBlock) && toBlock <= 0) {
-    return { logs: collectedLogs, blocks: collectedBlocksMap };
-  }
-
-  const { blocksMap, logs } = await fetchLogsWithBlocks({
-    provider,
-    filter,
-    promiseQueue,
-  });
-  console.log(blocksMap);
-
-  // when there is no range provided it's not possible to determine iterating logic
-  // could be refactored to allow custom iteration logic
-  if (!isNumber(fromBlock) || !isNumber(toBlock)) {
-    return { logs, blocks: blocksMap };
-  }
-  const combinedLogs = [...collectedLogs, ...logs];
-  const combinedBlocksMap = { ...blocksMap, ...collectedBlocksMap };
-  // latter condition prevents infinite loop
-  if (combinedLogs.length < (minLogsCount ?? 0) && fromBlock !== toBlock) {
-    // start iterating at the last element with the same range initially specified.
-    // could be refactored to a custom function, for instance allowing exponentially growing range
-    const newBlocksRange = {
-      toBlock: fromBlock,
-      fromBlock: fromBlock - (toBlock - fromBlock),
-    };
-    return await recursiveFetchLogsWithBlocks({
-      provider,
-      contractAddress,
-      minLogsCount,
-      promiseQueue,
-      collectedLogs: combinedLogs,
-      collectedBlocksMap: combinedBlocksMap,
-      blocksRange: newBlocksRange,
-      topics,
-    });
-  }
-
-  return { logs: combinedLogs, blocks: combinedBlocksMap };
 };

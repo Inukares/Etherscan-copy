@@ -1,21 +1,21 @@
 export type RecursiveFetchTransfers = ({
   from,
   to,
-  blocksRange,
+  blockRange,
   minLogsCount,
 }: {
   from?: string;
   to?: string;
-  blocksRange?: { toBlock?: number; fromBlock?: number };
+  blockRange?: { toBlock?: number; fromBlock?: number };
   minLogsCount?: number;
 }) => Promise<void>;
 
 export type FetchTransfers = ({
   from,
   to,
-  blocksRange,
+  blockRange,
 }: {
   from?: string;
   to?: string;
-  blocksRange?: { toBlock?: number; fromBlock?: number };
+  blockRange?: { toBlock?: number; fromBlock?: number };
 }) => Promise<void>;

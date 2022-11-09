@@ -24,7 +24,7 @@ export const Search = ({
         minLogsCount: 0,
         from,
         to,
-        blocksRange: {
+        blockRange: {
           toBlock: latestBlock,
           fromBlock: 0,
         },
@@ -32,7 +32,7 @@ export const Search = ({
     } else {
       await recursiveFetchTransfers({
         minLogsCount: MIN_LOGS,
-        blocksRange: {
+        blockRange: {
           toBlock: latestBlock,
           fromBlock: getBlockRange(latestBlock),
         },
