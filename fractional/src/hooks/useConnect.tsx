@@ -3,7 +3,7 @@ import { useWeb3React } from '@web3-react/core';
 
 import { network } from '../connectors';
 
-export function useEagerConnect() {
+export function useConnect() {
   const { activate, active } = useWeb3React();
 
   const [tried, setTried] = useState(false);
@@ -13,7 +13,6 @@ export function useEagerConnect() {
       try {
         await activate(network);
       } catch (_error) {
-        // gets caught by web3react anyway, but console logging for better experience
         console.error(_error);
         setTried(true);
       }
