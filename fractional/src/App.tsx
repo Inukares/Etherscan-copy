@@ -2,7 +2,7 @@ import { Web3Provider } from '@ethersproject/providers';
 import { useWeb3React } from '@web3-react/core';
 import React, { useEffect, useState, useCallback } from 'react';
 import './App.css';
-import { useEagerConnect } from './hooks/useEagerConnect';
+import { useConnect } from './hooks/useConnect';
 import { useInactiveListener } from './hooks/useInactiveListener';
 import {
   FetchTransfers,
@@ -24,7 +24,7 @@ function App() {
   const [to, setTo] = useState<string>('');
   const [latestBlock, setLatestBlock] = useState<number>(0);
 
-  useEagerConnect();
+  const tried = useConnect();
   const { transfers, error, fetchTransfers } = useLazyFetchTransfers({
     library,
   });
@@ -55,6 +55,29 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchTransfers, library]);
 
+  useEffect(() => {
+    // listen for changes on an Ethereum address
+    console.log(`listening for blocks...`);
+    if (library) {
+      // fetchTransferForBlock ?
+
+      library.on('block', (block) => {
+        console.log(block);
+      });
+    }
+    // remove listener when the component is unmounted
+    return () => {
+      if (library) {
+        library.removeAllListeners('block');
+      }
+    };
+    // trigger the effect only on component mount
+  }, [library]);
+
+  if (tried && !library) {
+    return <h2>Failed to connect to Ethereum node. Try again later.</h2>;
+  }
+
   if (connectionError) {
     console.error(connectionError);
     return <div>Failed to connect to Ethereum node.</div>;
@@ -63,10 +86,10 @@ function App() {
   if (error) {
     console.error(error);
     return (
-      <div>
-        There was an error while fetching data. Please see the console for more
-        details.
-      </div>
+      <h2>
+        You most likely requested too many logs. Please see more in the 'high
+        level decisions' section of Readme.md
+      </h2>
     );
   }
 

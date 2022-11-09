@@ -16,19 +16,18 @@ export const Search = ({
 }) => {
   const handleSearch = useCallback(async () => {
     if (from || to) {
-      const blocksRange = {
-        // Hopefully 10 rest calls are enough to prevent query returned more than 10000 results error
-        fromBlock: Math.round(latestBlock - latestBlock / 20),
-        toBlock: latestBlock,
-      };
-      console.log(blocksRange);
+      // TODO: Below line is likely to fail for addresses that contain a lot of logs.
+      // One way to solve this would be to provide small ranges for blocksRange to prevent error from happening at all times
+      // and try to fetch up untill genesis block to get all the logs/minimum count
+      // I intentionally omitted this part in order to have a further discussion about it
       await fetchTransfers({
         minLogsCount: 0,
         from,
         to,
-        blocksRange,
-        //   fromBlock: Math.round(latestBlock - latestBlock / 50),
-        //   toBlock: latestBlock,
+        blocksRange: {
+          toBlock: latestBlock,
+          fromBlock: 0,
+        },
       });
     } else {
       await fetchTransfers({
