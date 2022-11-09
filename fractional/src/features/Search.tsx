@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { FetchTransfers } from '../hooks/useLazyFetchTransfers';
+import { RecursiveFetchTransfers } from '../hooks/useLazyFetchTransfers/types';
 import { MIN_LOGS } from '../shared/constants';
 import { getBlockRange } from '../utils/getBlockRange';
 
@@ -7,12 +7,12 @@ export const Search = ({
   from,
   to,
   latestBlock,
-  fetchTransfers,
+  recursiveFetchTransfers,
 }: {
   from: string;
   to: string;
   latestBlock: number;
-  fetchTransfers: FetchTransfers;
+  recursiveFetchTransfers: RecursiveFetchTransfers;
 }) => {
   const handleSearch = useCallback(async () => {
     if (from || to) {
@@ -20,7 +20,7 @@ export const Search = ({
       // One way to solve this would be to provide small ranges for blocksRange to prevent error from happening at all times
       // and try to fetch up untill genesis block to get all the logs/minimum count
       // I intentionally omitted this part in order to have a further discussion about it
-      await fetchTransfers({
+      await recursiveFetchTransfers({
         minLogsCount: 0,
         from,
         to,
@@ -30,7 +30,7 @@ export const Search = ({
         },
       });
     } else {
-      await fetchTransfers({
+      await recursiveFetchTransfers({
         minLogsCount: MIN_LOGS,
         blocksRange: {
           toBlock: latestBlock,
@@ -38,7 +38,7 @@ export const Search = ({
         },
       });
     }
-  }, [fetchTransfers, from, latestBlock, to]);
+  }, [recursiveFetchTransfers, from, latestBlock, to]);
 
   return (
     <button

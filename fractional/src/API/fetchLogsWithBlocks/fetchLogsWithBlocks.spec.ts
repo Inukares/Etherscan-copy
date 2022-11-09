@@ -1,11 +1,11 @@
 import { fetchLogsMockResponse } from '../../utils/mocks';
-import { fetchLogsWithBlocks } from './fetchLogsWithBlocks';
+import { recursiveFetchLogsWithBlocks } from './fetchLogsWithBlocks';
 import { mockLogs } from '../../utils/mocks';
 import { BlocksMap } from '../../shared/types';
 
 type Provider = Record<string, any>;
 
-describe(fetchLogsWithBlocks, () => {
+describe(recursiveFetchLogsWithBlocks, () => {
   // Ideally I'd just import PQueue from node_modules, but doing that caused
   // "Cannot use import statement outside a module" error. After debugging for a while decided to
   // opt in for a hack-way to make it work, as I'm not really testing this lib but rather fetchLogsWithBlocks func
@@ -36,7 +36,7 @@ describe(fetchLogsWithBlocks, () => {
     );
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
-    const { logs, blocks } = await fetchLogsWithBlocks({
+    const { logs, blocks } = await recursiveFetchLogsWithBlocks({
       blocksRange: { fromBlock: 999, toBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
@@ -67,7 +67,7 @@ describe(fetchLogsWithBlocks, () => {
     );
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
-    const { logs, blocks } = await fetchLogsWithBlocks({
+    const { logs, blocks } = await recursiveFetchLogsWithBlocks({
       blocksRange: { fromBlock: 900, toBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
@@ -102,7 +102,7 @@ describe(fetchLogsWithBlocks, () => {
     );
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
-    const { logs, blocks } = await fetchLogsWithBlocks({
+    const { logs, blocks } = await recursiveFetchLogsWithBlocks({
       blocksRange: { fromBlock: 1000, toBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
@@ -135,7 +135,7 @@ describe(fetchLogsWithBlocks, () => {
     );
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
-    const { logs, blocks } = await fetchLogsWithBlocks({
+    const { logs, blocks } = await recursiveFetchLogsWithBlocks({
       blocksRange: { fromBlock: 0, toBlock: 1 },
       provider: provider as any,
       contractAddress: '0x',
@@ -167,7 +167,7 @@ describe(fetchLogsWithBlocks, () => {
     );
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
-    let response = await fetchLogsWithBlocks({
+    let response = await recursiveFetchLogsWithBlocks({
       blocksRange: { toBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
@@ -184,7 +184,7 @@ describe(fetchLogsWithBlocks, () => {
     getLogsMock.mockClear();
     getBlockMock.mockClear();
 
-    response = await fetchLogsWithBlocks({
+    response = await recursiveFetchLogsWithBlocks({
       blocksRange: { fromBlock: 1000 },
       provider: provider as any,
       contractAddress: '0x',
@@ -219,7 +219,7 @@ describe(fetchLogsWithBlocks, () => {
     provider.getLogs = getLogsMock;
     provider.getBlock = getBlockMock;
     expect(() =>
-      fetchLogsWithBlocks({
+      recursiveFetchLogsWithBlocks({
         blocksRange: { fromBlock: 1000, toBlock: 1000 },
         // @ts-ignore-next-line
         provider,

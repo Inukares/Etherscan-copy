@@ -3,18 +3,18 @@ import { useWeb3React } from '@web3-react/core';
 import React, { useEffect, useState, useCallback } from 'react';
 import './App.css';
 import { useConnect } from './hooks/useConnect';
+import DAIABI from './utils/DAIABI.json';
 import { useInactiveListener } from './hooks/useInactiveListener';
-import {
-  FetchTransfers,
-  useLazyFetchTransfers,
-} from './hooks/useLazyFetchTransfers';
+import { useLazyFetchTransfers } from './hooks/useLazyFetchTransfers/useLazyFetchTransfers';
 import { TransfersTable } from './features/TransfersTable';
 import { getBlockRange } from './utils/getBlockRange';
-import { MIN_LOGS } from './shared/constants';
+import { contractAddress, MIN_LOGS } from './shared/constants';
 import { Search } from './features/Search';
+import { fetchLogsWithBlocks } from './API/fetchLogsWithBlocks/fetchLogsWithBlocks';
 
 // 0x60594a405d53811d3BC4766596EFD80fd545A270
 
+// TDO: Move DAIABI to shared
 // TODO: Default sorting for table, listetningto new blocks
 // TODO: Correct inconsitent namings for errors, block vs blocksRange, etc
 // TODO: if recipient or sender is set, set minLogsCount to 0 and blockRange to null
@@ -25,9 +25,10 @@ function App() {
   const [latestBlock, setLatestBlock] = useState<number>(0);
 
   const tried = useConnect();
-  const { transfers, error, fetchTransfers } = useLazyFetchTransfers({
-    library,
-  });
+  const { transfers, error, recursiveFetchTransfers, fetchTransfers } =
+    useLazyFetchTransfers({
+      library,
+    });
 
   useEffect(() => {
     if (!library) return;
@@ -36,14 +37,12 @@ function App() {
       // needs to be wrapped in try catch as it initializes fetching latest block
       try {
         const latest = await library.getBlockNumber();
-        await fetchTransfers({
+        await recursiveFetchTransfers({
           minLogsCount: MIN_LOGS,
           blocksRange: {
             toBlock: latest,
             fromBlock: getBlockRange(latest),
           },
-          to,
-          from,
         });
         setLatestBlock(latest);
       } catch (err) {
@@ -53,25 +52,21 @@ function App() {
     fetchTransfersInitially();
     // run only on mount or library change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchTransfers, library]);
+  }, [recursiveFetchTransfers, library]);
 
   useEffect(() => {
-    // listen for changes on an Ethereum address
-    console.log(`listening for blocks...`);
     if (library) {
-      // fetchTransferForBlock ?
-
-      library.on('block', (block) => {
-        console.log(block);
+      library.on('block', async (block) => {
+        await fetchTransfers({
+          blocksRange: { fromBlock: block, toBlock: block },
+          from,
+          to,
+        });
       });
-    }
-    // remove listener when the component is unmounted
-    return () => {
-      if (library) {
+      return () => {
         library.removeAllListeners('block');
-      }
-    };
-    // trigger the effect only on component mount
+      };
+    }
   }, [library]);
 
   if (tried && !library) {
@@ -113,7 +108,7 @@ function App() {
           type={'text'}
         />
         <Search
-          fetchTransfers={fetchTransfers}
+          recursiveFetchTransfers={recursiveFetchTransfers}
           from={from}
           latestBlock={latestBlock}
           to={to}
