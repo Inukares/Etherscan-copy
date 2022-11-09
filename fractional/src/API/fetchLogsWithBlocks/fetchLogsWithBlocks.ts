@@ -1,4 +1,3 @@
-import { contractAddress } from './../../shared/constants';
 import PQueue from 'p-queue';
 import { QueueAddOptions } from 'p-queue';
 import PriorityQueue from 'p-queue/dist/priority-queue';

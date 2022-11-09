@@ -1,7 +1,7 @@
 import { Web3Provider } from '@ethersproject/providers';
-import ABI from '../../utils/DAIABI.json';
 import PQueue from 'p-queue';
 import { useState, useCallback } from 'react';
+import ABI from '../../shared/data/DAIABI.json';
 import { contractAddress, TRANSFER_HASH } from '../../shared/constants';
 import { Transfer } from '../../shared/types';
 import {

@@ -1,6 +1,6 @@
-import { fetchLogsMockResponse } from '../../shared/mocks';
+import { fetchLogsMockResponse } from '../../shared/data/mocks';
 import { recursiveFetchLogsWithBlocks } from './fetchLogsWithBlocks';
-import { mockLogs } from '../../shared/mocks';
+import { mockLogs } from '../../shared/data/mocks';
 import { BlocksMap } from '../../shared/types';
 
 type Provider = Record<string, any>;

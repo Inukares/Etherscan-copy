@@ -1,25 +1,19 @@
 import { Web3Provider } from '@ethersproject/providers';
 import { useWeb3React } from '@web3-react/core';
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
 import { useConnect } from './hooks/useConnect';
-import DAIABI from './utils/DAIABI.json';
-import { useInactiveListener } from './hooks/useInactiveListener';
 import { useLazyFetchTransfers } from './hooks/useLazyFetchTransfers/useLazyFetchTransfers';
 import { TransfersTable } from './features/TransfersTable';
 import { getBlockRange } from './utils/getBlockRange';
-import { contractAddress, MIN_LOGS } from './shared/constants';
+import { MIN_LOGS } from './shared/constants';
 import { Search } from './features/Search';
-import { fetchLogsWithBlocks } from './API/fetchLogsWithBlocks/fetchLogsWithBlocks';
 import { Spinner } from './shared/components/Spinner';
 import { DisplayError } from './shared/components/DisplayError';
 
 // 0x60594a405d53811d3BC4766596EFD80fd545A270
 
-// TDO: Move DAIABI to shared
-// TODO: Default sorting for table, listetningto new blocks
 // TODO: Correct inconsitent namings for errors, block vs blocksRange, etc
-// TODO: if recipient or sender is set, set minLogsCount to 0 and blockRange to null
 function App() {
   const { library, error: connectionError } = useWeb3React<Web3Provider>();
   const [from, setFrom] = useState<string>('');

@@ -3,9 +3,7 @@ import { useTable, useSortBy, Column, Row, TableState } from 'react-table';
 import { TRANSFERS_TO_SHOW } from '../constants';
 import { Transfer } from '../types';
 
-// TODO: Table should be mased as reusable component. Atm it includes built-in classNames, but I avoided it in order to save time on implementation
-// as it'd be easier to refactor when actually in need, rather than doing so just for abstraction purposes
-
+// TODO: Make it more reusable, by deleting dependency on hardcoded styles and using styles basing on data shape
 export function Table({
   columns,
   data,
@@ -14,9 +12,8 @@ export function Table({
 }: {
   columns: Column[];
   data: Array<Transfer>;
-  // react-table v7 has poor typescript support. Many types are simply incorrect :(
+  // react-table v7 has poor typescript support. Many types are simply incorrect, such as missing sortBy in initialState :(
   initialState?: any;
-  // TODO: improve types to be flexible, not hardcoded
   onRowClick?: (row: Row<object>) => Window | null;
 }) {
   const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
@@ -84,7 +81,6 @@ export function Table({
           })}
         </tbody>
       </table>
-      <br />
       <div>
         Showing the first{' '}
         {TRANSFERS_TO_SHOW < rows.length ? TRANSFERS_TO_SHOW : rows.length}{' '}
