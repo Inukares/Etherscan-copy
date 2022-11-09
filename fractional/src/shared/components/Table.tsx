@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTable, useSortBy, Column, Row, TableState } from 'react-table';
-import { TRANSFERS_TO_SHOW } from './constants';
-import { Transfer } from './types';
+import { TRANSFERS_TO_SHOW } from '../constants';
+import { Transfer } from '../types';
 
 // TODO: Table should be mased as reusable component. Atm it includes built-in classNames, but I avoided it in order to save time on implementation
 // as it'd be easier to refactor when actually in need, rather than doing so just for abstraction purposes

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Column, Row } from 'react-table';
+import { Table } from '../shared/components/Table';
 import { ETHERSCAN_TX_URL } from '../shared/constants';
-import { Table } from '../shared/Table';
 import { Transfer } from '../shared/types';
 import { getTimeElapsed } from '../utils/getTimeElapsed';
 

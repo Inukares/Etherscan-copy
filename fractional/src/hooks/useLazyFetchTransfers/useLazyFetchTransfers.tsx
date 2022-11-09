@@ -10,7 +10,6 @@ import {
 } from '../../API/fetchLogsWithBlocks/fetchLogsWithBlocks';
 import { mapToTransferHistory } from '../../utils/mapToTransferHistory/mapToTransferHistory';
 import { mapTopicsToFilter } from '../../utils/mapTopicsToFilter';
-import { stringify } from 'querystring';
 import { getSanitizedParams } from '../../utils/getSanitizedParams';
 import { FetchTransfers, RecursiveFetchTransfers } from './types';
 
@@ -42,10 +41,9 @@ export const useLazyFetchTransfers = ({
       to?: string;
       blocksRange?: { toBlock?: number; fromBlock?: number };
     }): Promise<void> => {
+      setError(null);
       setLoading(true);
       if (!library) {
-        setLoading(false);
-        // setTransfers([]);
         return;
       }
       try {
@@ -68,14 +66,16 @@ export const useLazyFetchTransfers = ({
           ABI
         );
         if (history.length > 0) {
-          setTransfers([...history, ...transfers]);
+          // ensure that always merge previous values
+          setTransfers((transfers) => [...history, ...transfers]);
         }
       } catch (error) {
         console.log(error);
       }
       setLoading(false);
     },
-    [library, promiseQueue, transfers]
+
+    [library, promiseQueue]
   );
 
   const recursiveFetchTransfers = useCallback(
@@ -90,12 +90,11 @@ export const useLazyFetchTransfers = ({
       blocksRange?: { toBlock?: number; fromBlock?: number };
       minLogsCount?: number;
     }): Promise<void> => {
+      setError(null);
+      setLoading(true);
       if (!library) {
-        setLoading(false);
-        // setTransfers([]);
         return;
       }
-      setLoading(true);
       try {
         const { logs, blocks } = await recursiveFetchLogsWithBlocks({
           collectedLogs: [],
@@ -107,14 +106,13 @@ export const useLazyFetchTransfers = ({
           topics: mapTopicsToFilter([TRANSFER_HASH, from, to]),
           blocksRange,
         });
-        console.log(logs, blocks);
         const history = mapToTransferHistory(
           logs,
           blocks,
           contractAddress,
           ABI
         );
-        setTransfers(history);
+        setTransfers(() => history);
       } catch (e) {
         console.error(e);
         setError(e);

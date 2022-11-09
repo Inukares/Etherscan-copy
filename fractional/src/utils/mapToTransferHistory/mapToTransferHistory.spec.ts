@@ -1,8 +1,8 @@
 import { BlocksMap } from '../../shared/types';
-import { fetchLogsMockResponse } from './../mocks';
+import { fetchLogsMockResponse } from '../../shared/mocks';
 import { ethers } from 'ethers';
 import ABI from '../DAIABI.json';
-import { mockLogs } from '../mocks';
+import { mockLogs } from '../../shared/mocks';
 import { mapToTransferHistory } from './mapToTransferHistory';
 describe(mapToTransferHistory, () => {
   it('should map blocksMap and logs responses', () => {

@@ -11,6 +11,8 @@ import { getBlockRange } from './utils/getBlockRange';
 import { contractAddress, MIN_LOGS } from './shared/constants';
 import { Search } from './features/Search';
 import { fetchLogsWithBlocks } from './API/fetchLogsWithBlocks/fetchLogsWithBlocks';
+import { Spinner } from './shared/components/Spinner';
+import { DisplayError } from './shared/components/DisplayError';
 
 // 0x60594a405d53811d3BC4766596EFD80fd545A270
 
@@ -25,7 +27,7 @@ function App() {
   const [latestBlock, setLatestBlock] = useState<number>(0);
 
   const tried = useConnect();
-  const { transfers, error, recursiveFetchTransfers, fetchTransfers } =
+  const { transfers, error, loading, recursiveFetchTransfers, fetchTransfers } =
     useLazyFetchTransfers({
       library,
     });
@@ -57,6 +59,7 @@ function App() {
   useEffect(() => {
     if (library) {
       library.on('block', async (block) => {
+        setLatestBlock(() => block);
         await fetchTransfers({
           blocksRange: { fromBlock: block, toBlock: block },
           from,
@@ -67,7 +70,7 @@ function App() {
         library.removeAllListeners('block');
       };
     }
-  }, [library]);
+  }, [fetchTransfers, from, library, to]);
 
   if (tried && !library) {
     return <h2>Failed to connect to Ethereum node. Try again later.</h2>;
@@ -77,16 +80,7 @@ function App() {
     console.error(connectionError);
     return <div>Failed to connect to Ethereum node.</div>;
   }
-
-  if (error) {
-    console.error(error);
-    return (
-      <h2>
-        You most likely requested too many logs. Please see more in the 'high
-        level decisions' section of Readme.md
-      </h2>
-    );
-  }
+  debugger;
 
   return (
     <div>
@@ -115,7 +109,14 @@ function App() {
         />
       </div>
       <div>
-        {transfers ? <TransfersTable data={transfers} /> : <h2>Loading...</h2>}
+        {error ? (
+          <DisplayError
+            error={error}
+            message={`You most likely requested too many logs. Please see more in the 'high level decisions' section of Readme.md`}
+          />
+        ) : null}
+        {transfers.length > 0 ? <TransfersTable data={transfers} /> : null}
+        {loading && transfers.length === 0 ? <Spinner /> : null}
       </div>
     </div>
   );
