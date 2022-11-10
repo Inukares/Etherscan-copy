@@ -18,7 +18,7 @@ const mapper = (
   value: ethers.utils.formatEther(parsedLog.args[2]),
 });
 
-export const mapToTransferHistory = (
+export const mapToTransfers = (
   logs: Log[],
   blocksMap: BlocksMap,
   contractAddress: string,

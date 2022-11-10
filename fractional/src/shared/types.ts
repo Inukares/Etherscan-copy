@@ -10,11 +10,4 @@ export type Transfer = {
   timestamp: number | null;
 };
 
-export type Filter = {
-  address: string;
-  topics: Topics;
-  fromBlock?: number;
-  toBlock?: number;
-};
-
 export type Topics = Array<string | null>;

@@ -1,5 +1,4 @@
 import { ethers } from 'ethers';
-import { Topics } from '../shared/types';
 
 export const mapTopicsToFilter = (
   topics: Array<string | null | undefined>

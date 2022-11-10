@@ -1,5 +1,4 @@
-import React from 'react';
-import { useTable, useSortBy, Column, Row, TableState } from 'react-table';
+import { useTable, useSortBy, Column, Row } from 'react-table';
 import { TRANSFERS_TO_SHOW } from '../constants';
 import { Transfer } from '../types';
 

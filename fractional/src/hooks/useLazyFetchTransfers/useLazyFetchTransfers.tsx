@@ -5,7 +5,7 @@ import ABI from '../../shared/data/DAIABI.json';
 import { contractAddress, TRANSFER_HASH } from '../../shared/constants';
 import { Transfer } from '../../shared/types';
 import { fetchLogsWithBlocks } from '../../API/fetchLogsWithBlocks/fetchLogsWithBlocks';
-import { mapToTransferHistory } from '../../utils/mapToTransferHistory/mapToTransferHistory';
+import { mapToTransfers } from '../../utils/mapToTransferHistory/mapToTransferHistory';
 import { mapTopicsToFilter } from '../../utils/mapTopicsToFilter';
 import { getSanitizedParams } from '../../utils/getSanitizedParams';
 import { FetchTransfers, RecursiveFetchTransfers } from './types';
@@ -57,15 +57,10 @@ export const useLazyFetchTransfers = ({
           provider: library,
         });
 
-        const history = mapToTransferHistory(
-          logs,
-          blocks,
-          contractAddress,
-          ABI
-        );
-        if (history.length > 0) {
+        const transfers = mapToTransfers(logs, blocks, contractAddress, ABI);
+        if (transfers.length > 0) {
           // ensure that always merge previous values
-          setTransfers((transfers) => [...history, ...transfers]);
+          setTransfers((oldTransfers) => [...transfers, ...oldTransfers]);
         }
       } catch (error) {
         setError(error);
@@ -105,13 +100,8 @@ export const useLazyFetchTransfers = ({
           topics: mapTopicsToFilter([TRANSFER_HASH, from, to]),
           blockRange,
         });
-        const history = mapToTransferHistory(
-          logs,
-          blocks,
-          contractAddress,
-          ABI
-        );
-        setTransfers(() => history);
+        const transfers = mapToTransfers(logs, blocks, contractAddress, ABI);
+        setTransfers(() => transfers);
       } catch (e) {
         console.error(e);
         setError(e);

@@ -1,13 +1,13 @@
 import { BlocksMap } from '../../shared/types';
 import { fetchLogsMockResponse } from '../../shared/data/mocks';
 import ABI from '../../shared/data/DAIABI.json';
-import { mapToTransferHistory } from './mapToTransferHistory';
+import { mapToTransfers } from './mapToTransferHistory';
 
-describe(mapToTransferHistory, () => {
+describe(mapToTransfers, () => {
   it('should map blocksMap and logs responses', () => {
     const logs = fetchLogsMockResponse.logs;
     const block = fetchLogsMockResponse.blocks;
-    const result = mapToTransferHistory(
+    const result = mapToTransfers(
       logs,
       block as unknown as BlocksMap,
       '0x6b175474e89094c44da98b954eedeac495271d0f',
@@ -29,7 +29,7 @@ describe(mapToTransferHistory, () => {
   it('returns null timestamp in case there was a failure while fetching block', () => {
     const logs = fetchLogsMockResponse.logs;
     const block = {};
-    const result = mapToTransferHistory(
+    const result = mapToTransfers(
       logs,
       block,
       '0x6b175474e89094c44da98b954eedeac495271d0f',
