@@ -48,6 +48,7 @@ export const fetchLogsWithBlocks = async ({
       try {
         block = await provider.getBlock(blockNumber);
         blocksMap[block.number] = { ...block };
+        // ignore missed blocks and simply not display timestamp.
       } catch (error) {
         console.error('Failed to fetch block!:', error);
       }

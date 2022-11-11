@@ -1,5 +1,5 @@
 import { BlocksMap } from '../../shared/types';
-import { fetchLogsMockResponse } from '../../shared/data/mocks';
+import { fetchLogsMockResponse } from './mocks';
 import ABI from '../../shared/data/DAIABI.json';
 import { mapToTransfers } from './mapToTransferHistory';
 

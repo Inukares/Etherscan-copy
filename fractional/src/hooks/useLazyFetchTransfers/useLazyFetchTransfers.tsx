@@ -10,6 +10,7 @@ import { mapTopicsToFilter } from '../../utils/mapTopicsToFilter';
 import { getSanitizedParams } from '../../utils/getSanitizedParams';
 import { FetchTransfers, RecursiveFetchTransfers } from './types';
 import { recursiveFetchLogsWithBlocks } from '../../API/fetchLogsWithBlocks/recursiveFetchLogsWithBlocks';
+import { getErrorMessage } from '../../shared/toErrorWithMessage';
 
 export const useLazyFetchTransfers = ({
   library,
@@ -63,7 +64,7 @@ export const useLazyFetchTransfers = ({
           setTransfers((oldTransfers) => [...transfers, ...oldTransfers]);
         }
       } catch (error) {
-        setError(error);
+        setError(getErrorMessage(error));
         console.log(error);
       }
       setLoading(false);
@@ -102,9 +103,9 @@ export const useLazyFetchTransfers = ({
         });
         const transfers = mapToTransfers(logs, blocks, contractAddress, ABI);
         setTransfers(() => transfers);
-      } catch (e) {
-        console.error(e);
-        setError(e);
+      } catch (error) {
+        console.error(error);
+        setError(getErrorMessage(error));
         setTransfers(() => []);
       }
       setLoading(false);

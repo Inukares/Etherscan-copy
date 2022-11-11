@@ -1,54 +1,10 @@
-import { fetchLogsMockResponse } from '../../shared/data/mocks';
-import { mockLogs } from '../../shared/data/mocks';
-import { BlocksMap } from '../../shared/types';
+import { getMockPQueue } from '../../shared/testUtils/getMockPQueue';
+import { fetchLogsMockResponse } from './mocks';
 import { recursiveFetchLogsWithBlocks } from './recursiveFetchLogsWithBlocks';
 
 type Provider = Record<string, any>;
 
 describe(recursiveFetchLogsWithBlocks, () => {
-  // Ideally I'd just import PQueue from node_modules, but doing that caused
-  // "Cannot use import statement outside a module" error. After debugging for a while decided to
-  // opt in for a hack-way to make it work, as I'm not really testing this lib but rather fetchLogsWithBlocks func
-  const getMockPQueue = (): any => {
-    const add = jest.fn().mockImplementation(async (func) => await func());
-    const onIdle = jest.fn();
-    const PQueue = { add, onIdle } as any;
-
-    return PQueue;
-  };
-
-  it('fethes logs and blocks', async () => {
-    const PQueue = getMockPQueue();
-    let provider: Provider = {};
-    const { logs: expectedLogs, blocks: expectedBlocks } =
-      fetchLogsMockResponse;
-    const getLogsMock = jest.fn(
-      ({ address, fromBlock, toBlock, topics }) =>
-        new Promise((resolve) => {
-          resolve(expectedLogs);
-        })
-    );
-    const getBlockMock = jest.fn(
-      (number) =>
-        new Promise(async (resolve) => {
-          resolve(expectedBlocks['15867800']);
-        })
-    );
-    provider.getLogs = getLogsMock;
-    provider.getBlock = getBlockMock;
-    const { logs, blocks } = await recursiveFetchLogsWithBlocks({
-      blockRange: { fromBlock: 999, toBlock: 1000 },
-      provider: provider as any,
-      contractAddress: '0x',
-      promiseQueue: PQueue as any,
-      collectedBlocksMap: {},
-      collectedLogs: [],
-      minLogsCount: 1,
-      topics: [],
-    });
-    expect(blocks).toEqual(expectedBlocks);
-    expect(logs).toEqual(expectedLogs);
-  });
   it('merges results on subsequent runs', async () => {
     const PQueue = getMockPQueue();
     let provider: Provider = {};
@@ -74,7 +30,7 @@ describe(recursiveFetchLogsWithBlocks, () => {
       collectedBlocksMap: {},
       promiseQueue: PQueue,
       collectedLogs: [],
-      minLogsCount: 3,
+      minLogsCount: mockLogs.length * 3,
       topics: [],
     });
     const expectedLogs = [...mockLogs, ...mockLogs, ...mockLogs];
@@ -198,37 +154,5 @@ describe(recursiveFetchLogsWithBlocks, () => {
     expect(response.logs).toEqual(expectedLogs);
     expect(getLogsMock).toHaveBeenCalledTimes(1);
     expect(getBlockMock).toHaveBeenCalledTimes(1);
-  });
-  it.skip('shows error message when throws', async () => {
-    const PQueue = getMockPQueue();
-    let provider: Provider = {};
-    const { blocks: expectedBlocks } = fetchLogsMockResponse;
-    const getLogsMock = jest.fn(
-      ({ address, fromBlock, toBlock, topics }) =>
-        new Promise((resolve, reject) => {
-          reject('oops');
-        })
-    );
-    const getBlockMock = jest.fn(
-      (number) =>
-        new Promise((resolve, reject) => {
-          reject('oops');
-        })
-    );
-    provider.getLogs = getLogsMock;
-    provider.getBlock = getBlockMock;
-    expect(() =>
-      recursiveFetchLogsWithBlocks({
-        blockRange: { fromBlock: 1000, toBlock: 1000 },
-        // @ts-ignore-next-line
-        provider,
-        contractAddress: '0x',
-        collectedBlocksMap: expectedBlocks as unknown as BlocksMap, // actual response doesnt match types from ethers lib
-        collectedLogs: mockLogs,
-        promiseQueue: PQueue,
-        minLogsCount: 1,
-        parallelRequests: 1,
-      })
-    ).toThrow();
   });
 });
