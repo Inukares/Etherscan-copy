@@ -1,3 +1,4 @@
+import { isAddressValid } from '../isAddressValid';
 import { ethers } from 'ethers';
 
 export const mapTopicsToFilter = (
@@ -7,9 +8,11 @@ export const mapTopicsToFilter = (
   const from = topics[1] || null;
   const to = topics[2] || null;
   const filter = [transfer_hash];
-  if (typeof from === 'string' && from)
-    filter.push(ethers.utils.hexZeroPad(from, 32));
-  if (typeof to === 'string' && to)
-    filter.push(ethers.utils.hexZeroPad(to, 32));
+  if (isAddressValid(from)) {
+    filter.push(ethers.utils.hexZeroPad(from as string, 32));
+  }
+  if (isAddressValid(to)) {
+    filter.push(ethers.utils.hexZeroPad(to as string, 32));
+  }
   return filter;
 };

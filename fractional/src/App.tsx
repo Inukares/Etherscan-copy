@@ -38,7 +38,7 @@ function App() {
         });
         setLatestBlock(latest);
       } catch (err) {
-        console.error('Failed to fetch trnasfers!', err);
+        console.error('Failed to fetch transfers!', err);
       }
     };
     fetchTransfersInitially();

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { RecursiveFetchTransfers } from '../hooks/useLazyFetchTransfers/types';
 import { MIN_LOGS } from '../shared/constants';
 import { getBlockRange } from '../utils/getBlockRange';
+import { isAddressValid } from '../utils/isAddressValid';
 
 export const Search = ({
   from,
@@ -40,11 +41,27 @@ export const Search = ({
     }
   }, [recursiveFetchTransfers, from, latestBlock, to]);
 
+  let isEnabled = true;
+  if (from && to) {
+    isEnabled = isAddressValid(from) && isAddressValid(to);
+  } else if (from) {
+    isEnabled = isAddressValid(from);
+  } else if (to) {
+    isEnabled = isAddressValid(to);
+  }
+
+  const className = `
+m-auto mt-0 w-full p-4 border-2 border-black border-sold ${
+    isEnabled ? '' : 'disabled border-rose-600 cursor-not-allowed'
+  }
+  `;
+  const onClick = async () => {
+    if (isEnabled) return await handleSearch();
+    return () => {};
+  };
+
   return (
-    <button
-      onClick={async () => await handleSearch()}
-      className="m-auto mt-0 w-full p-4 border-2 border-black border-sold"
-    >
+    <button onClick={onClick} className={className}>
       Search
     </button>
   );

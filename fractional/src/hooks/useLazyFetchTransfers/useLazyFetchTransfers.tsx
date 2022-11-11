@@ -6,7 +6,7 @@ import { contractAddress, TRANSFER_HASH } from '../../shared/constants';
 import { Transfer } from '../../shared/types';
 import { fetchLogsWithBlocks } from '../../API/fetchLogsWithBlocks/fetchLogsWithBlocks';
 import { mapToTransfers } from '../../utils/mapToTransferHistory/mapToTransferHistory';
-import { mapTopicsToFilter } from '../../utils/mapTopicsToFilter';
+import { mapTopicsToFilter } from '../../utils/mapTopicsToFilter/mapTopicsToFilter';
 import { getSanitizedParams } from '../../utils/getSanitizedParams';
 import { FetchTransfers, RecursiveFetchTransfers } from './types';
 import { recursiveFetchLogsWithBlocks } from '../../API/fetchLogsWithBlocks/recursiveFetchLogsWithBlocks';
@@ -27,7 +27,7 @@ export const useLazyFetchTransfers = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>();
   const [promiseQueue] = useState(
-    new PQueue({ interval: 1000, concurrency: 5 })
+    new PQueue({ interval: 1200, concurrency: 5 })
   );
 
   const fetchTransfers = useCallback(
