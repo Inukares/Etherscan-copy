@@ -27,7 +27,7 @@ export const useLazyFetchTransfers = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>();
   const [promiseQueue] = useState(
-    new PQueue({ interval: 1200, concurrency: 5 })
+    new PQueue({ interval: 1300, concurrency: 5 })
   );
 
   const fetchTransfers = useCallback(
@@ -41,7 +41,7 @@ export const useLazyFetchTransfers = ({
       blockRange?: { toBlock?: number; fromBlock?: number };
     }): Promise<void> => {
       setError(null);
-      setLoading(true);
+      setLoading(() => true);
       if (!library) {
         return;
       }
@@ -85,8 +85,10 @@ export const useLazyFetchTransfers = ({
       blockRange?: { toBlock?: number; fromBlock?: number };
       minLogsCount?: number;
     }): Promise<void> => {
+      console.log(loading);
+      debugger;
       setError(null);
-      setLoading(true);
+      setLoading(() => true);
       if (!library) {
         return;
       }
@@ -110,7 +112,7 @@ export const useLazyFetchTransfers = ({
       }
       setLoading(false);
     },
-    [library, promiseQueue]
+    [library, loading, promiseQueue]
   );
 
   return {

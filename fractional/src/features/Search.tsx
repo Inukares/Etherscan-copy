@@ -61,8 +61,13 @@ m-auto mt-0 w-full p-4 border-2 border-black border-sold ${
   };
 
   return (
-    <button onClick={onClick} className={className}>
-      Search
-    </button>
+    <>
+      {isEnabled ? null : (
+        <label className="text-rose-600">Address has to be valid.</label>
+      )}
+      <button onClick={onClick} className={className}>
+        Search
+      </button>
+    </>
   );
 };
